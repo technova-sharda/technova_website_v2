@@ -31,7 +31,7 @@ const MENTORS = [
         imagePath: "/assets/leadership/dean.png"
     },
     {
-        name: "Prof. (Dr.) Sudeep Varshney",
+        name: "Prof. (Dr.) Jayant Sekhar",
         role: "HoD, Dept. of CSE",
         message: "Computer Science & Engineering is one of the most vibrant department of Sharda University with varieties of specialized programs in Artificial Intelligence & Machine Learning, Cyber Security, Internet of Things, Data Science and Business Intelligence. To have holistic development of students of distinct programs of computer science and to grow the innovative culture among the students, Students Activity Clubs are functional. These clubs are headed by the team of students and they are performing in different dimensions of technology under the guidance of specialized faculty members. Several national and international students are contributing to develop themselves and other peers to excel among the multidisciplinary aspects. The club activities strengthens placements, startups, national/international competitions and research outcomes. We are proud to have high aimed and energetic students club performing exceptionally well since last five years.",
         quote: "Best Wishes to All My Students",
