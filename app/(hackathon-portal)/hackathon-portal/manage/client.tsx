@@ -8,7 +8,7 @@ import {
     getSchedule, addScheduleItem, deleteScheduleItem, updateTeamStatus, toggleEvaluationPeriod,
     getCheckedInParticipantsData, getFoodLogsData,
     getVolunteers, addVolunteer, removeVolunteer, uploadVolunteersData, updateVolunteerShift,
-    addHackathonTeamManually, updateHackathonTeamDetails, updateCustomMeals,
+    addHackathonTeamManually, updateHackathonTeamDetails, updateCustomMeals, updateHackathonName,
     updateEvaluationRounds, emailShortlistedTeams, emailSingleTeam, blastCustomEmail,
     getHackathonRoles, addHackathonRole, removeHackathonRole, approveScoreEdit, sendEvaluatorInvite, getEditRequests,
     importEventAttendees, getEventAttendees, deleteEventAttendees, sendAttendeeQrEmails,
@@ -98,6 +98,7 @@ export default function HackathonManageClient() {
 
     const [customMeals, setCustomMeals] = useState<string[]>(["Breakfast - Day 1", "Lunch - Day 1", "Snacks - Day 1", "Dinner - Day 1", "Breakfast - Day 2", "Lunch - Day 2"]);
     const [newMeal, setNewMeal] = useState("");
+    const [hackathonName, setHackathonName] = useState("CodeMania Hackathon");
 
     // Attendance states
     const [attendees, setAttendees] = useState<any[]>([]);
@@ -177,6 +178,9 @@ export default function HackathonManageClient() {
         if (checkpointsData) setAttCheckpoints(checkpointsData);
         if (settingsData?.custom_meals && Array.isArray(settingsData.custom_meals)) {
             setCustomMeals(settingsData.custom_meals);
+        }
+        if (settingsData?.hackathon_name) {
+            setHackathonName(settingsData.hackathon_name);
         }
         // Load attendance event settings from DB
         const attSettings = await getAttendanceEventSettings();
@@ -1641,6 +1645,35 @@ export default function HackathonManageClient() {
                                     className="bg-amber-600 hover:bg-amber-500 text-gray-900 px-6 py-3 rounded-xl shadow-sm text-sm font-bold transition-colors shadow-lg shadow-amber-500/20"
                                 >
                                     Update Rounds
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl shadow-sm p-6 mt-6 relative overflow-hidden">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                <Settings className="w-4 h-4 text-purple-600" /> Hackathon Name
+                            </h3>
+                            <p className="text-xs text-gray-500 font-mono tracking-wider mb-6">Set the global name of the hackathon which will appear on portals and emails.</p>
+
+                            <div className="flex items-center gap-4">
+                                <input
+                                    type="text"
+                                    value={hackathonName}
+                                    onChange={(e) => setHackathonName(e.target.value)}
+                                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl shadow-sm px-4 py-3 text-gray-900 font-bold focus:outline-none focus:border-purple-500 transition-colors"
+                                />
+                                <button
+                                    onClick={async () => {
+                                        const res = await updateHackathonName(hackathonName);
+                                        if (res.success) {
+                                            setMessage({ type: 'success', text: `Hackathon name updated to ${hackathonName}` });
+                                        } else {
+                                            setMessage({ type: 'error', text: res.error || "Failed to update name" });
+                                        }
+                                    }}
+                                    className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl shadow-sm text-sm font-bold transition-colors shadow-lg shadow-purple-500/20"
+                                >
+                                    Update Name
                                 </button>
                             </div>
                         </div>

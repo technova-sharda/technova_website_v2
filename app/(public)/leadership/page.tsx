@@ -48,47 +48,61 @@ const MENTORS = [
 
 
 const TEAM_METADATA: Record<string, any> = {
-    "Mohammad Sameer": {
+    "Shivangi Joshi": {
         bio: "Leading the vision and strategy of Technova.",
         color: "text-[var(--sig-amber)]",
         bg: "bg-[var(--sig-amber)]/10",
         icon: Award,
-        imagePath: "/assets/team/technova_main/mohammad_sameer.png"
+        imagePath: null
     },
-    "Masood Aslam": {
+    "Saquib Shamshi": {
         bio: "Driving operational excellence and team coordination.",
         color: "text-[var(--sig-indigo)]",
         bg: "bg-[var(--sig-indigo)]/10",
         icon: TrendingUp,
-        imagePath: "/assets/team/technova_main/masood_aslam.png"
+        imagePath: null
     },
-    "Khushi Narang": {
+    "Lavanya Bharadwaj": {
         bio: "Managing administrative efficiency and documentation.",
         color: "text-[var(--sig-green)]",
         bg: "bg-[var(--sig-green)]/10",
         icon: Target,
-        imagePath: "/assets/team/technova_main/khushi_narang.png"
+        imagePath: null
     },
-    "Ankit Gautam": {
+    "Salwa Rashid": {
+        bio: "Assisting in administration and team coordination.",
+        color: "text-blue-500",
+        bg: "bg-blue-500/10",
+        icon: Users,
+        imagePath: null
+    },
+    "Aishwarya Srivastava": {
         bio: "Managing external communications and brand image.",
         color: "text-pink-500",
         bg: "bg-pink-500/10",
         icon: Users,
-        imagePath: "/assets/team/technova_main/ankit_gautam.jpg"
+        imagePath: null
     },
-    "Suryansh Dixit": {
+    "Tanvi Puri": {
         bio: "Assisting in outreach and media relations.",
         color: "text-pink-500",
         bg: "bg-pink-500/10",
         icon: Users,
-        imagePath: "/assets/team/technova_main/suryansh_dixit.png"
+        imagePath: null
     },
-    "Farhan Khan": {
-        bio: "Curating content and managing editorial strategy.",
+    "Sanzit Kumar Shil": {
+        bio: "Curating creative content and managing editorial strategy.",
         color: "text-[var(--sig-amber)]",
         bg: "bg-[var(--sig-amber)]/10",
         icon: BookOpen,
-        imagePath: "/assets/team/farhan_khan.png"
+        imagePath: null
+    },
+    "Dushyant Prajapati": {
+        bio: "Leading technical developments and innovation.",
+        color: "text-[var(--sig-indigo)]",
+        bg: "bg-[var(--sig-indigo)]/10",
+        icon: Sparkles,
+        imagePath: null
     }
 }
 

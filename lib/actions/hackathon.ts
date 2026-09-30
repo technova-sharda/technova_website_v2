@@ -815,6 +815,26 @@ export async function updateCustomMeals(meals: string[]) {
     return { success: true }
 }
 
+export async function updateHackathonName(name: string) {
+    const session = await auth()
+    if (!session || !session.user || (!['admin', 'super_admin', 'student_lead'].includes(session.user.role as string))) return { error: "Unauthorized" }
+
+    const supabase = await getSupabase()
+    const { data: existing } = await supabase.from('hackathon_settings').select('id').limit(1).maybeSingle()
+
+    if (existing) {
+        const { error } = await supabase.from('hackathon_settings').update({ hackathon_name: name }).eq('id', existing.id)
+        if (error) return { error: error.message }
+    } else {
+        const { error } = await supabase.from('hackathon_settings').insert({ hackathon_name: name })
+        if (error) return { error: error.message }
+    }
+
+    revalidatePath('/admin/hackathon')
+    revalidatePath('/hackathon-portal')
+    return { success: true }
+}
+
 export async function pushAnnouncement(message: string) {
     const session = await auth()
     if (!session || !session.user || (!['admin', 'super_admin', 'student_lead'].includes(session.user.role as string))) return { error: "Unauthorized" }
@@ -2832,6 +2852,60 @@ export async function getGateStats() {
         outsideCount,
         trackedCount: latestDirection.size,
     }
+}
+
+export async function getOverdueParticipants() {
+    const { role } = await checkHackathonRole()
+    if (role !== 'organizer' && role !== 'volunteer') return []
+
+    const supabase = await getSupabase()
+
+    const { data: allLogs } = await supabase
+        .from('hackathon_gate_logs')
+        .select(`
+            participant_id, 
+            direction, 
+            scanned_at,
+            hackathon_participants (name, phone, hackathon_teams(name, team_code))
+        `)
+        .order('scanned_at', { ascending: false })
+
+    if (!allLogs) return []
+
+    const latestLogs = new Map<string, any>()
+    for (const log of allLogs) {
+        if (!latestLogs.has(log.participant_id)) {
+            latestLogs.set(log.participant_id, log)
+        }
+    }
+
+    const overdue: any[] = []
+    const now = Date.now()
+
+    latestLogs.forEach((log) => {
+        if (log.direction === 'exit') {
+            const exitTime = new Date(log.scanned_at).getTime()
+            const diffMs = now - exitTime
+            const mins = Math.floor(diffMs / 60000)
+            
+            // If outside for more than 30 mins
+            if (mins >= 30) {
+                const p = log.hackathon_participants
+                const team = (p as any)?.hackathon_teams
+                overdue.push({
+                    id: log.participant_id,
+                    name: p?.name || 'Unknown',
+                    phone: p?.phone || 'N/A',
+                    teamName: team?.name || 'N/A',
+                    teamCode: team?.team_code || 'N/A',
+                    minsOutside: mins,
+                    scannedAt: log.scanned_at
+                })
+            }
+        }
+    })
+
+    return overdue.sort((a, b) => b.minsOutside - a.minsOutside)
 }
 
 export async function getGateLogs() {
