@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import { processGateScan, getGateStats } from "@/lib/actions/hackathon";
+import { processGateScan, getGateStats, getOverdueParticipants } from "@/lib/actions/hackathon";
 import { ArrowLeft, Camera, CheckCircle, AlertCircle, DoorOpen, DoorClosed, Users, Activity, BarChart3 } from "lucide-react";
 
 export default function GateScannerClient() {
@@ -22,12 +22,18 @@ export default function GateScannerClient() {
         outsideCount: number;
         trackedCount: number;
     } | null>(null);
+    const [overdueList, setOverdueList] = useState<any[]>([]);
+    const [showOverdue, setShowOverdue] = useState(false);
 
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
     const loadStats = async () => {
-        const s = await getGateStats();
+        const [s, overdue] = await Promise.all([
+            getGateStats(),
+            getOverdueParticipants()
+        ]);
         if (s) setStats(s);
+        if (overdue) setOverdueList(overdue);
     };
 
     useEffect(() => {
@@ -248,6 +254,44 @@ export default function GateScannerClient() {
                                 style={{ width: `${stats.totalParticipants ? (stats.trackedCount / stats.totalParticipants) * 100 : 0}%` }}
                             />
                         </div>
+                    </div>
+                )}
+
+                {/* Overdue Participants Panel */}
+                {overdueList.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl overflow-hidden">
+                        <button
+                            onClick={() => setShowOverdue(!showOverdue)}
+                            className="w-full flex items-center justify-between p-3 text-red-700 hover:bg-red-100 transition-colors"
+                        >
+                            <div className="flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4" />
+                                <span className="font-bold text-sm">{overdueList.length} participant{overdueList.length !== 1 ? 's' : ''} out &gt; 30 mins!</span>
+                            </div>
+                            <span className="text-xs font-bold uppercase tracking-widest">{showOverdue ? 'Hide' : 'View'}</span>
+                        </button>
+                        
+                        {showOverdue && (
+                            <div className="p-3 border-t border-red-200 divide-y divide-red-100 max-h-60 overflow-y-auto">
+                                {overdueList.map((p, i) => (
+                                    <div key={i} className="py-2 first:pt-0 last:pb-0 flex items-start justify-between">
+                                        <div>
+                                            <p className="font-bold text-sm text-red-900">{p.name}</p>
+                                            <p className="text-xs text-red-700">{p.teamName} ({p.teamCode})</p>
+                                            <p className="text-xs text-red-600 font-mono mt-0.5">{p.phone}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap">
+                                                {p.minsOutside >= 60 ? `${Math.floor(p.minsOutside/60)}h ${p.minsOutside%60}m` : `${p.minsOutside}m`} out
+                                            </span>
+                                            <p className="text-[10px] text-red-500 mt-1 uppercase tracking-wider">
+                                                Since {new Date(p.scannedAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit'})}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

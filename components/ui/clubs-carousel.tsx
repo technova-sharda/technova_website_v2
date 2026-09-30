@@ -12,12 +12,6 @@ const clubs = [
         desc: "Innovating the future with Intelligence. Exploring AI, Machine Learning, and Robotics.",
     },
     {
-        name: "AWS Cloud",
-        slug: "aws-cloud",
-        logo: "/assets/logo/awscc.png",
-        desc: "Building on the Cloud, for the World. Mastering AWS services and serverless architecture.",
-    },
-    {
         name: "CyberPirates",
         slug: "cyber-pirates",
         logo: "/assets/logo/cyberpirates.png",

@@ -18,12 +18,6 @@ const CLUB_ASSETS: Record<string, { slug: string, logo: string, color: string, g
         color: "indigo",
         glowColor: "rgba(99, 102, 241, 0.4)"
     },
-    "AWS Cloud": {
-        slug: "aws-cloud",
-        logo: "/assets/logo/awscc.png",
-        color: "orange",
-        glowColor: "rgba(249, 115, 22, 0.4)"
-    },
     "CyberPirates": {
         slug: "cyber-pirates",
         logo: "/assets/logo/cyberpirates.png",
