@@ -8,6 +8,7 @@ export const config = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           prompt: "consent",
@@ -33,7 +34,7 @@ export const config = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        const email = user.email
+        const email = user.email?.trim().toLowerCase()
         if (!email) {
           return false
         }
