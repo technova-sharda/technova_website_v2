@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendBlastEmail } from '@/lib/actions/notifications'
 
+// Rendering and sending to a few hundred participants needs more than the default time
+export const maxDuration = 60
+
 /**
  * API endpoint for sending blast emails to event participants
  * Admin only - authorization handled in sendBlastEmail
@@ -28,7 +31,9 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Blast email sent to ${result.emailsSent} participants`
+            message: result.emailsFailed
+                ? `Blast email sent to ${result.emailsSent} participants (${result.emailsFailed} failed)`
+                : `Blast email sent to ${result.emailsSent} participants`
         })
     } catch (error) {
         console.error('[Blast Email] Error:', error)

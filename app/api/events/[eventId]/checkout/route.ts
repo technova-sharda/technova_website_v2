@@ -2,6 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
+import { revalidateTag } from 'next/cache'
+import { istDateKey } from '@/lib/dates/ist'
+import { incrementUserXp } from '@/lib/xp/increment'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +28,7 @@ export async function POST(
     // Rate limiting
     const rateLimit = checkRateLimit(
         getClientIdentifier(req, session.user.id),
-        { limit: 30, windowSeconds: 60 }
+        { limit: 60, windowSeconds: 60, bucket: 'checkout' }
     )
     if (!rateLimit.success) {
         return NextResponse.json({
@@ -59,14 +62,21 @@ export async function POST(
             return NextResponse.json({ success: false, message: 'Attendee is not checked in' }, { status: 400 })
         }
 
-        // 2. Remove the daily_checkin record for today
-        const today = new Date().toISOString().split('T')[0]
-        await supabase
+        // 2. Remove today's daily_checkin record. Check-ins are keyed by IST date,
+        //    so "today" must be the IST date too (the server runs in UTC).
+        const today = istDateKey(new Date())
+        const { data: removedCheckins, error: removeError } = await supabase
             .from('daily_checkins')
             .delete()
             .eq('user_id', registration.user_id)
             .eq('event_id', eventId)
             .eq('checkin_date', today)
+            .select('xp_awarded')
+
+        if (removeError) {
+            console.error('Checkout: failed to remove check-in:', removeError.message)
+            return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 })
+        }
 
         // 3. Check if there are any remaining daily_checkin records
         const { data: remainingCheckins } = await supabase
@@ -83,42 +93,18 @@ export async function POST(
                 .eq('id', registration.id)
         }
 
-        // 5. Deduct XP that was awarded for today's check-in
-        // Find the xp_transactions for today
-        const { data: todayXP } = await supabase
-            .from('xp_transactions')
-            .select('id, xp_amount, user_id')
-            .eq('user_id', registration.user_id)
-            .eq('event_id', eventId)
-            .gte('created_at', `${today}T00:00:00`)
-            .lte('created_at', `${today}T23:59:59`)
-
-        if (todayXP && todayXP.length > 0) {
-            // Delete today's XP transactions for this event
-            await supabase
-                .from('xp_transactions')
-                .delete()
-                .eq('user_id', registration.user_id)
-                .eq('event_id', eventId)
-                .gte('created_at', `${today}T00:00:00`)
-                .lte('created_at', `${today}T23:59:59`)
-
-            // Recalculate user's total XP
-            const totalDeducted = todayXP.reduce((sum, t) => sum + (t.xp_amount || 0), 0)
-            if (totalDeducted > 0) {
-                const { data: userProfile } = await supabase
-                    .from('user_profiles')
-                    .select('total_xp')
-                    .eq('user_id', registration.user_id)
-                    .single()
-
-                if (userProfile) {
-                    await supabase
-                        .from('user_profiles')
-                        .update({ total_xp: Math.max(0, (userProfile.total_xp || 0) - totalDeducted) })
-                        .eq('user_id', registration.user_id)
-                }
+        // 5. Take back the XP that today's check-in awarded.
+        //    (This used to target tables that don't exist — xp_transactions and
+        //    user_profiles — so XP was never deducted, and re-scanning the student
+        //    awarded the same day's XP a second time.)
+        const xpToRemove = (removedCheckins || []).reduce((sum, c) => sum + (c.xp_awarded || 0), 0)
+        if (xpToRemove > 0) {
+            const xp = await incrementUserXp(supabase, registration.user_id, -xpToRemove)
+            if (!xp.ok) {
+                console.error('Checkout: XP deduction failed:', xp.error)
             }
+            revalidateTag('leaderboard', { expire: 0 })
+            revalidateTag(`user-${registration.user_id}`, { expire: 0 })
         }
 
         // 6. Get user name for response

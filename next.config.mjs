@@ -1,13 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    typescript: {
-        // Ignore build errors from @auth/core package (upstream issue with CSS custom properties)
-        ignoreBuildErrors: true,
-    },
+    // Type errors now fail the build (there are 0 as of Oct 2026). The old
+    // `ignoreBuildErrors: true` hid 15 errors, including a missing import that made
+    // the "Force refresh leaderboard" button crash. Run `npm run typecheck` locally.
     experimental: {
         serverActions: {
-            bodySizeLimit: '5mb',
+            bodySizeLimit: '11mb', // position certificates can be up to 10MB
         },
+    },
+    // Certificate PDFs embed bundled fonts read from disk
+    outputFileTracingIncludes: {
+        '/api/certificate': ['./public/fonts/certificates/**'],
+        '/api/certificate/bulk': ['./public/fonts/certificates/**'],
+        '/admin/events/[id]/certificates': ['./public/fonts/certificates/**'],
     },
     images: {
         remotePatterns: [

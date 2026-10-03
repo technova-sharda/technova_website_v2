@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { generateCertificateWithTemplate } from '@/lib/certificates/generate'
+import { generateCertificateWithTemplate, generatePositionCertificate } from '@/lib/certificates/generate'
+import { getSignedCertificateUrl } from '@/lib/certificates/storage'
 import { auth } from '@/lib/auth'
 import { formatDateShort } from '@/lib/utils'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
@@ -10,8 +11,9 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Rate limit: 5 requests per minute per IP
-const RATE_LIMIT_CONFIG = { limit: 5, windowSeconds: 60 }
+// Rate limit per IP. Campus Wi-Fi puts hundreds of students behind one public IP,
+// so after a certificate email goes out 5/minute blocked most of them.
+const RATE_LIMIT_CONFIG = { limit: 60, windowSeconds: 60, bucket: 'certificate-download' }
 
 export async function GET(req: NextRequest) {
     // Rate limiting
@@ -70,12 +72,34 @@ async function handleCertificateById(certificateId: string) {
         .eq('certificate_id', certificateId)
         .single()
 
-    if (error || !certificate) {
+    if (error || !certificate || certificate.status === 'pending') {
         return Response.json({ error: 'Certificate not found' }, { status: 404 })
     }
 
     if (certificate.status === 'revoked') {
         return Response.json({ error: 'Certificate has been revoked' }, { status: 403 })
+    }
+
+    // Position certificates are ready-made files; only the QR is stamped on
+    if (certificate.position_id && certificate.file_url) {
+        const { data: position } = await supabase
+            .from('certificate_positions')
+            .select('qr_region')
+            .eq('id', certificate.position_id)
+            .single()
+
+        await supabase
+            .from('certificates')
+            .update({ downloaded_count: (certificate.downloaded_count || 0) + 1 })
+            .eq('id', certificate.id)
+
+        const pdfBytes = await generatePositionCertificate(
+            certificate.file_url,
+            certificate.qr_region || position?.qr_region,
+            certificate.certificate_id,
+            process.env.NEXT_PUBLIC_APP_URL
+        )
+        return pdfResponse(pdfBytes, `certificate-${certificate.certificate_id}.pdf`)
     }
 
     // Get event details
@@ -106,25 +130,8 @@ async function handleCertificateById(certificateId: string) {
         .update({ downloaded_count: (certificate.downloaded_count || 0) + 1 })
         .eq('id', certificate.id)
 
-    // Get signed URL for template if needed
-    let templateUrl = template?.template_url || null
-    if (templateUrl) {
-        // Extract path from the public URL and create a signed URL
-        try {
-            const url = new URL(templateUrl)
-            const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/certificates\/(.+)/)
-            if (pathMatch && pathMatch[1]) {
-                const { data: signedData } = await supabase.storage
-                    .from('certificates')
-                    .createSignedUrl(pathMatch[1], 60) // 60 seconds validity
-                if (signedData?.signedUrl) {
-                    templateUrl = signedData.signedUrl
-                }
-            }
-        } catch (e) {
-            console.log('Could not generate signed URL, using original:', e)
-        }
-    }
+    // Template bucket is private; sign the URL for the generator
+    const templateUrl = template?.template_url ? await getSignedCertificateUrl(template.template_url, 60) : null
 
     // Generate certificate
     const clubData = event?.club as { name: string }[] | { name: string } | null
@@ -144,13 +151,14 @@ async function handleCertificateById(certificateId: string) {
         process.env.NEXT_PUBLIC_APP_URL
     )
 
-    // Return PDF
+    return pdfResponse(pdfBytes, `certificate-${certificate.certificate_id}.pdf`)
+}
+
+function pdfResponse(pdfBytes: Uint8Array, fileName: string) {
     const arrayBuffer = pdfBytes.buffer.slice(
         pdfBytes.byteOffset,
         pdfBytes.byteOffset + pdfBytes.byteLength
     ) as ArrayBuffer
-
-    const fileName = `certificate-${certificate.certificate_id}.pdf`
 
     return new Response(arrayBuffer, {
         headers: {
@@ -166,13 +174,16 @@ async function handleCertificateByEventId(eventId: string) {
         return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user has a certificate for this event
+    // Check if user has a certificate for this event (a student may hold several; prefer participation)
     const { data: certificate, error } = await supabase
         .from('certificates')
         .select('*')
         .eq('user_id', session.user.id)
         .eq('event_id', eventId)
-        .single()
+        .neq('status', 'pending')
+        .order('position_id', { ascending: true, nullsFirst: true })
+        .limit(1)
+        .maybeSingle()
 
     if (error || !certificate) {
         // Fallback: Check if user attended (for legacy/unconfigured events)

@@ -1,6 +1,11 @@
-import { PDFDocument, rgb, StandardFonts, PDFImage, PDFFont } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, PDFImage, PDFFont, PDFPage } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
+import { readFile } from 'fs/promises'
+import path from 'path'
 import { generateCertificateQRBuffer } from '@/lib/qr/generate'
 import type { QRRegion, TextRegion, TextFieldType } from '@/types/custom'
+import { CERTIFICATE_FONT_DIR, DISABLED_FONT_FEATURES, FONT_BASELINE_HEIGHT, getCertificateFont, getFontFileName } from '@/lib/certificates/fonts'
+import { downloadCertificateFile } from '@/lib/certificates/storage'
 
 // ==========================================
 // Types
@@ -177,99 +182,258 @@ export async function generateCertificate(
 }
 
 // ==========================================
-// Template-Based Certificate Generation
+// Shared helpers
+// ==========================================
+
+// Small in-memory caches. Generating a ZIP for a whole event used to download the
+// same template image (and re-read the same fonts) once per student.
+const CACHE_TTL_MS = 5 * 60 * 1000
+const CACHE_MAX_ENTRIES = 8
+const assetCache = new Map<string, { at: number; bytes: Promise<ArrayBuffer | Uint8Array> }>()
+
+function cached(key: string, load: () => Promise<ArrayBuffer | Uint8Array>): Promise<ArrayBuffer | Uint8Array> {
+    const now = Date.now()
+    const hit = assetCache.get(key)
+    if (hit && now - hit.at < CACHE_TTL_MS) return hit.bytes
+
+    const bytes = load()
+    // Don't keep failed loads around
+    bytes.catch(() => assetCache.delete(key))
+    assetCache.set(key, { at: now, bytes })
+    if (assetCache.size > CACHE_MAX_ENTRIES) {
+        const oldest = assetCache.keys().next().value
+        if (oldest !== undefined) assetCache.delete(oldest)
+    }
+    return bytes
+}
+
+/** Signed URLs carry a changing token; cache by the stable path part. */
+function cacheKeyForUrl(url: string): string {
+    try {
+        const u = new URL(url)
+        return `url:${u.origin}${u.pathname}`
+    } catch {
+        return `url:${url}`
+    }
+}
+
+async function fetchBuffer(url: string): Promise<ArrayBuffer> {
+    const response = await fetch(url)
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ${url}: ${response.status}`)
+    }
+    return await response.arrayBuffer()
+}
+
+/** Embeds a PNG/JPG background as a page sized to the image's aspect ratio (max A4 landscape). */
+async function addImagePage(pdfDoc: PDFDocument, buffer: ArrayBuffer | Uint8Array, hint: string): Promise<PDFPage> {
+    const lower = hint.toLowerCase().split('?')[0]
+    let image: PDFImage
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+        image = await pdfDoc.embedJpg(buffer)
+    } else {
+        try {
+            image = await pdfDoc.embedPng(buffer)
+        } catch {
+            image = await pdfDoc.embedJpg(buffer)
+        }
+    }
+
+    const maxWidth = 842
+    const maxHeight = 595
+    const scale = Math.min(maxWidth / image.width, maxHeight / image.height)
+    const pageWidth = image.width * scale
+    const pageHeight = image.height * scale
+
+    const page = pdfDoc.addPage([pageWidth, pageHeight])
+    page.drawImage(image, { x: 0, y: 0, width: pageWidth, height: pageHeight })
+    return page
+}
+
+async function drawQRCode(pdfDoc: PDFDocument, page: PDFPage, qrRegion: QRRegion, certificateId: string, baseUrl?: string) {
+    const { width: pageWidth, height: pageHeight } = page.getSize()
+    // QR is square; its size is a percentage of the page width (same as the editor)
+    const qrSize = (qrRegion.width / 100) * pageWidth
+
+    const qrBuffer = await generateCertificateQRBuffer(certificateId, Math.round(qrSize * 3), baseUrl)
+    const qrImage = await pdfDoc.embedPng(qrBuffer)
+
+    const qrX = (qrRegion.x / 100) * pageWidth
+    const qrY = pageHeight - ((qrRegion.y / 100) * pageHeight) - qrSize // PDF origin is bottom-left
+
+    page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize })
+}
+
+/**
+ * How fonts are embedded on this attempt:
+ *  - 'auto': each bundled font's verified mode (full embed unless the font says subset)
+ *  - 'subset': embed only used glyphs (retry when a full embed fails to save)
+ *  - 'helvetica': last resort so a certificate is always produced
+ */
+type FontMode = 'auto' | 'subset' | 'helvetica'
+
+interface RegionFont {
+    pdf: PDFFont
+    /** fontkit font used to lay out text (kerning, no ligatures); null for Helvetica */
+    layout: any | null
+}
+
+// Parsed fontkit fonts are read-only and reusable across certificates
+const layoutFontCache = new Map<string, any>()
+
+function getLayoutFont(key: string, bytes: ArrayBuffer | Uint8Array) {
+    let font = layoutFontCache.get(key)
+    if (!font) {
+        font = (fontkit as any).create(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes))
+        layoutFontCache.set(key, font)
+        if (layoutFontCache.size > 20) {
+            const oldest = layoutFontCache.keys().next().value
+            if (oldest !== undefined) layoutFontCache.delete(oldest)
+        }
+    }
+    return font
+}
+
+/** Loads the font for a text region: bundled TTF, admin-uploaded font, or Helvetica. */
+async function loadRegionFont(pdfDoc: PDFDocument, region: TextRegion, cache: Map<string, RegionFont>, mode: FontMode): Promise<RegionFont> {
+    const bold = region.fontWeight === 'bold'
+    const helveticaKey = bold ? 'helvetica-bold' : 'helvetica'
+    const helvetica = async (): Promise<RegionFont> => {
+        const existing = cache.get(helveticaKey)
+        if (existing) return existing
+        const font = { pdf: await pdfDoc.embedFont(bold ? StandardFonts.HelveticaBold : StandardFonts.Helvetica), layout: null }
+        cache.set(helveticaKey, font)
+        return font
+    }
+
+    if (mode === 'helvetica') return helvetica()
+
+    let key: string
+    let loadBytes: () => Promise<ArrayBuffer | Uint8Array>
+    let subset = mode === 'subset'
+
+    if (region.fontFamily === 'custom' && region.customFontPath) {
+        key = `custom:${region.customFontPath}`
+        loadBytes = () => cached(`storage:${region.customFontPath}`, () => downloadCertificateFile(region.customFontPath!))
+    } else {
+        const font = getCertificateFont(region.fontFamily)
+        if (!font) return helvetica()
+        const fileName = getFontFileName(font, bold)
+        key = fileName
+        loadBytes = () => readBundledFont(fileName)
+        subset = subset || !!font.subset
+    }
+
+    const alreadyEmbedded = cache.get(key)
+    if (alreadyEmbedded) return alreadyEmbedded
+
+    try {
+        const bytes = await loadBytes()
+        const embedded: RegionFont = {
+            pdf: await pdfDoc.embedFont(bytes, { subset }),
+            layout: getLayoutFont(key, bytes),
+        }
+        cache.set(key, embedded)
+        return embedded
+    } catch (error) {
+        console.error(`Failed to load font ${key}, falling back to Helvetica:`, error)
+        return helvetica()
+    }
+}
+
+interface PlacedGlyph { text: string; x: number; y: number }
+
+/**
+ * Lays out text the way a browser would (kerning applied, ligatures and contextual
+ * alternates off) and returns where each character goes. pdf-lib's own drawText
+ * ignores kerning, which made letters collide or drift apart in script fonts.
+ */
+function layoutText(text: string, font: RegionFont, size: number, letterSpacing: number): { width: number; glyphs: PlacedGlyph[] } {
+    const glyphs: PlacedGlyph[] = []
+    let x = 0
+
+    if (font.layout) {
+        const run = font.layout.layout(text, DISABLED_FONT_FEATURES)
+        const scale = size / font.layout.unitsPerEm
+        run.glyphs.forEach((glyph: any, i: number) => {
+            const position = run.positions[i]
+            const chars = glyph.codePoints?.length ? String.fromCodePoint(...glyph.codePoints) : ''
+            if (chars) glyphs.push({ text: chars, x: x + position.xOffset * scale, y: position.yOffset * scale })
+            x += position.xAdvance * scale + (i < run.glyphs.length - 1 ? letterSpacing : 0)
+        })
+        return { width: x, glyphs }
+    }
+
+    // Standard fonts throw on characters outside WinAnsi; strip them instead of failing
+    const chars = Array.from(text.replace(/[^\x20-\x7E\xA0-\xFF]/g, ''))
+    chars.forEach((char, i) => {
+        glyphs.push({ text: char, x, y: 0 })
+        x += font.pdf.widthOfTextAtSize(char, size) + (i < chars.length - 1 ? letterSpacing : 0)
+    })
+    return { width: x, glyphs }
+}
+
+async function readBundledFont(fileName: string): Promise<Uint8Array | ArrayBuffer> {
+    return cached(`font:${fileName}`, () => readBundledFontUncached(fileName))
+}
+
+async function readBundledFontUncached(fileName: string): Promise<Uint8Array | ArrayBuffer> {
+    try {
+        return await readFile(path.join(process.cwd(), 'public', 'fonts', 'certificates', fileName))
+    } catch {
+        // Serverless bundles may not include /public; fetch the static asset instead
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.technovashardauniversity.in'
+        return await fetchBuffer(`${baseUrl}${CERTIFICATE_FONT_DIR}/${fileName}`)
+    }
+}
+
+// ==========================================
+// Template-Based Certificate Generation (Participation)
 // ==========================================
 
 export async function generateCertificateFromTemplate(
     options: CertificateGenerationOptions
 ): Promise<Uint8Array> {
-    const { templateUrl, qrRegion, textRegions, data, baseUrl } = options
+    const { templateUrl, data } = options
 
-    // If no template URL, use legacy generation
-    if (!templateUrl) {
-        return generateCertificate(
-            data.participantName,
-            data.eventName,
-            data.eventDate,
-            data.certificateId
-        )
-    }
+    const fallback = () => generateCertificate(data.participantName, data.eventName, data.eventDate, data.certificateId)
 
-    // Fetch template image
-    let templateBuffer: ArrayBuffer
+    if (!templateUrl) return fallback()
+
+    let templateBytes: ArrayBuffer | Uint8Array
     try {
-        const response = await fetch(templateUrl)
-        if (!response.ok) {
-            throw new Error(`Failed to fetch template: ${response.status}`)
-        }
-        templateBuffer = await response.arrayBuffer()
+        templateBytes = await cached(cacheKeyForUrl(templateUrl), () => fetchBuffer(templateUrl))
     } catch (error) {
-        console.error('Failed to fetch template, using fallback:', error)
-        return generateCertificate(
-            data.participantName,
-            data.eventName,
-            data.eventDate,
-            data.certificateId
-        )
+        console.error('Failed to load template, using fallback:', error)
+        return fallback()
     }
 
-    // Create PDF document
+    // A font problem must never stop a student from getting their certificate:
+    // retry with subsetting, then with Helvetica, before the plain fallback.
+    for (const mode of ['auto', 'subset', 'helvetica'] as const) {
+        try {
+            return await renderTemplateCertificate(options, templateUrl, templateBytes, mode)
+        } catch (error) {
+            console.error(`Certificate render failed with font mode "${mode}":`, error)
+        }
+    }
+    return fallback()
+}
+
+async function renderTemplateCertificate(
+    options: CertificateGenerationOptions,
+    templateUrl: string,
+    templateBytes: ArrayBuffer | Uint8Array,
+    mode: FontMode
+): Promise<Uint8Array> {
+    const { qrRegion, textRegions, data, baseUrl } = options
+
     const pdfDoc = await PDFDocument.create()
+    pdfDoc.registerFontkit(fontkit)
 
-    // Determine template type and embed
-    let templateImage: PDFImage
-    const templateUrlLower = templateUrl.toLowerCase()
+    const page = await addImagePage(pdfDoc, templateBytes, templateUrl)
+    const { width: pageWidth, height: pageHeight } = page.getSize()
 
-    try {
-        if (templateUrlLower.endsWith('.png')) {
-            templateImage = await pdfDoc.embedPng(templateBuffer)
-        } else if (templateUrlLower.endsWith('.jpg') || templateUrlLower.endsWith('.jpeg')) {
-            templateImage = await pdfDoc.embedJpg(templateBuffer)
-        } else {
-            // Try PNG first, then JPEG
-            try {
-                templateImage = await pdfDoc.embedPng(templateBuffer)
-            } catch {
-                templateImage = await pdfDoc.embedJpg(templateBuffer)
-            }
-        }
-    } catch (error) {
-        console.error('Failed to embed template image:', error)
-        return generateCertificate(
-            data.participantName,
-            data.eventName,
-            data.eventDate,
-            data.certificateId
-        )
-    }
-
-    // Get template dimensions (maintain aspect ratio, fit in A4 landscape)
-    const templateWidth = templateImage.width
-    const templateHeight = templateImage.height
-
-    // Create page with same aspect ratio as template
-    // Scale to reasonable PDF size (max 842x595 for A4 landscape)
-    const maxWidth = 842
-    const maxHeight = 595
-    const scale = Math.min(maxWidth / templateWidth, maxHeight / templateHeight)
-    const pageWidth = templateWidth * scale
-    const pageHeight = templateHeight * scale
-
-    const page = pdfDoc.addPage([pageWidth, pageHeight])
-
-    // Draw template as background
-    page.drawImage(templateImage, {
-        x: 0,
-        y: 0,
-        width: pageWidth,
-        height: pageHeight,
-    })
-
-    // Get fonts
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica)
-
-    // Get field value helper
     const getFieldValue = (field: TextFieldType): string => {
         switch (field) {
             case 'participant_name':
@@ -289,81 +453,64 @@ export async function generateCertificateFromTemplate(
         }
     }
 
-    // Draw text regions
+    const fontCache = new Map<string, RegionFont>()
+
     for (const region of textRegions) {
         const text = getFieldValue(region.field)
         if (!text) continue
 
-        // Convert percentage to actual coordinates
-        // Note: PDF coordinates start from bottom-left
-        const x = (region.x / 100) * pageWidth
-        const y = pageHeight - ((region.y / 100) * pageHeight) // Invert Y for PDF
-
-        // Parse color (hex to RGB)
+        const font = await loadRegionFont(pdfDoc, region, fontCache, mode)
         const color = hexToRgb(region.color || '#000000')
 
-        // Select font
-        const font = region.fontWeight === 'bold' ? fontBold : fontRegular
+        // fontSize is relative to an 800px-tall template (the editor uses the same scale)
+        const scaleFactor = pageHeight / FONT_BASELINE_HEIGHT
+        const fontSize = (region.fontSize || 24) * scaleFactor
+        const letterSpacing = (region.letterSpacing || 0) * scaleFactor
 
-        // Scale font size proportionally to page dimensions
-        // The editor uses fontSize as a relative value - we scale it based on page height
-        // A baseline of 800px height is used as reference (typical certificate size in editor)
-        const baselineHeight = 800
-        const fontScaleFactor = pageHeight / baselineHeight
-        const fontSize = Math.round((region.fontSize || 24) * fontScaleFactor)
+        const { width: textWidth, glyphs } = layoutText(text, font, fontSize, letterSpacing)
 
-        const textWidth = font.widthOfTextAtSize(text, fontSize)
+        const anchorX = (region.x / 100) * pageWidth
+        const centerY = pageHeight - (region.y / 100) * pageHeight // PDF origin is bottom-left
 
-        let textX = x
-        if (region.alignment === 'center') {
-            textX = x - textWidth / 2
-        } else if (region.alignment === 'right') {
-            textX = x - textWidth
+        let textX = anchorX
+        if (region.alignment === 'center') textX = anchorX - textWidth / 2
+        else if (region.alignment === 'right') textX = anchorX - textWidth
+
+        // Vertically center the line box on the anchor, matching the editor's translate(-50%)
+        const ascent = font.pdf.heightAtSize(fontSize, { descender: false })
+        const descent = font.pdf.heightAtSize(fontSize) - ascent
+        const baselineY = centerY - (ascent - descent) / 2
+
+        const fill = rgb(color.r, color.g, color.b)
+        for (const glyph of glyphs) {
+            page.drawText(glyph.text, { x: textX + glyph.x, y: baselineY + glyph.y, size: fontSize, font: font.pdf, color: fill })
         }
-
-        // Adjust Y position - move up by half the font height for better centering
-        const adjustedY = y - fontSize / 2
-
-        page.drawText(text, {
-            x: textX,
-            y: adjustedY,
-            size: fontSize,
-            font: font,
-            color: rgb(color.r, color.g, color.b),
-        })
     }
 
-    // Draw QR Code
     if (data.certificateId && qrRegion) {
         try {
-            // Calculate QR size based on region width
-            const qrWidth = (qrRegion.width / 100) * pageWidth
-            const qrHeight = (qrRegion.height / 100) * pageHeight
-            const qrSize = Math.min(qrWidth, qrHeight) // Keep square
-
-            const qrBuffer = await generateCertificateQRBuffer(
-                data.certificateId,
-                Math.round(qrSize * 2), // Generate at 2x for quality
-                baseUrl
-            )
-
-            const qrImage = await pdfDoc.embedPng(qrBuffer)
-
-            // Convert percentage to coordinates
-            const qrX = (qrRegion.x / 100) * pageWidth
-            const qrY = pageHeight - ((qrRegion.y / 100) * pageHeight) - qrSize // Invert Y
-
-            page.drawImage(qrImage, {
-                x: qrX,
-                y: qrY,
-                width: qrSize,
-                height: qrSize,
-            })
+            await drawQRCode(pdfDoc, page, qrRegion, data.certificateId, baseUrl)
         } catch (error) {
             console.error('Failed to embed QR code:', error)
         }
     }
 
+    return await pdfDoc.save()
+}
+
+// ==========================================
+// Ready-Made Certificate (Positions) - only the QR is added
+// ==========================================
+
+export async function generatePositionCertificate(
+    fileUrl: string,
+    qrRegion: QRRegion,
+    certificateId: string,
+    baseUrl?: string
+): Promise<Uint8Array> {
+    const pdfDoc = await PDFDocument.create()
+    const page = await addImagePage(pdfDoc, await cached(`storage:${fileUrl}`, () => downloadCertificateFile(fileUrl)), fileUrl)
+    await drawQRCode(pdfDoc, page, qrRegion, certificateId, baseUrl)
     return await pdfDoc.save()
 }
 

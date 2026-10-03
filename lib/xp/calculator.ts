@@ -9,6 +9,8 @@
  * Formula: Final XP = Base XP × Duration Multiplier × Difficulty Multiplier
  */
 
+import { istDaySpan, spansMultipleIstDays } from '@/lib/dates/ist'
+
 // ==========================================
 // Types
 // ==========================================
@@ -86,10 +88,8 @@ export function getDurationMultiplier(
         const durationMs = end.getTime() - start.getTime()
         const durationHours = durationMs / (1000 * 60 * 60)
 
-        // Check if spans multiple days (different dates)
-        const startDate = start.toDateString()
-        const endDate = end.toDateString()
-        if (startDate !== endDate) {
+        // Check if spans multiple days (different IST calendar dates)
+        if (spansMultipleIstDays(start, end)) {
             return 3.0  // Multi-day
         }
 
@@ -122,9 +122,7 @@ export function getDurationLabel(
         const durationMs = end.getTime() - start.getTime()
         const durationHours = durationMs / (1000 * 60 * 60)
 
-        const startDate = start.toDateString()
-        const endDate = end.toDateString()
-        if (startDate !== endDate) return 'Multi-day'
+        if (spansMultipleIstDays(start, end)) return 'Multi-day'
 
         for (const tier of DURATION_TIERS) {
             if (durationHours <= tier.maxHours) {
@@ -149,17 +147,10 @@ export function getEventDayCount(
     try {
         const start = new Date(startTime)
         const end = new Date(endTime)
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return 1
 
-        // Reset to start of day for accurate day count
-        const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
-        const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate())
-
-        // Calculate difference in days
-        const diffMs = endDay.getTime() - startDay.getTime()
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1  // +1 because both start and end day count
-
-        // Minimum 1 day
-        return Math.max(1, diffDays)
+        // Count IST calendar days, both start and end day included (minimum 1)
+        return istDaySpan(start, end)
     } catch {
         return 1  // Default to single day on parse error
     }

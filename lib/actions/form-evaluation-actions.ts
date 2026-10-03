@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@supabase/supabase-js"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
+import { sendEmailOrThrow } from "@/lib/email/send"
 import { render } from "@react-email/render"
 import EvaluatorInviteEmail from "@/emails/evaluator-invite"
 import { EvaluatorUpdateEmail } from "@/emails/evaluator-update"
@@ -61,7 +62,15 @@ export async function updateEvaluationCriteria(formId: string, criteria: string[
 // EVALUATORS MANAGEMENT
 // ============================================================
 
+async function isAdminSession() {
+    const session = await auth()
+    return !!session && ['admin', 'super_admin'].includes(session.user.role)
+}
+
+// Admin only: the rows include each evaluator's secret magic_token.
 export async function getFormEvaluators(formId: string) {
+    if (!(await isAdminSession())) return []
+
     const supabase = getSupabase()
     const { data, error } = await supabase
         .from("form_evaluators")
@@ -105,7 +114,7 @@ export async function addFormEvaluator(formId: string, name: string, email: stri
             evaluateUrl
         }))
 
-        await resend.emails.send({
+        await sendEmailOrThrow(resend, {
             from: 'Technova <noreply@technovashardauniversity.in>',
             to: email,
             subject: `You have been invited to evaluate: ${form?.title || "TechNova Form"}`,
@@ -187,7 +196,7 @@ export async function sendEmailToEvaluators(formId: string, subject: string, mes
                 message
             }))
 
-            return resend.emails.send({
+            return sendEmailOrThrow(resend, {
                 from: 'Technova <noreply@technovashardauniversity.in>',
                 to: evaluator.email,
                 subject: subject,
@@ -241,6 +250,15 @@ export async function submitFormEvaluation(
     if (form && form.evaluations_open === false) {
         throw new Error("Evaluations are currently closed for this form.")
     }
+
+    // The response must belong to the form this evaluator was invited to
+    const { data: response } = await supabase
+        .from("form_responses")
+        .select("id")
+        .eq("id", responseId)
+        .eq("form_id", evaluator.form_id)
+        .maybeSingle()
+    if (!response) throw new Error("This submission is not part of your evaluation form.")
 
     // Check if evaluation is locked
     const { data: existing } = await supabase
@@ -419,7 +437,16 @@ export async function getFormEvaluationResults(formId: string) {
 }
 
 // Get candidates (form responses) for evaluation
-export async function getFormCandidates(formId: string) {
+// Applicants' answers plus name/email/system ID: only for admins, or for an
+// evaluator whose magic token belongs to this form.
+export async function getFormCandidates(formId: string, evaluatorToken?: string) {
+    if (evaluatorToken) {
+        const evaluator = await getEvaluatorByToken(evaluatorToken)
+        if (!evaluator || evaluator.form_id !== formId) return []
+    } else if (!(await isAdminSession())) {
+        return []
+    }
+
     const supabase = getSupabase()
 
     const { data: responses, error } = await supabase
@@ -454,7 +481,15 @@ export async function getFormCandidates(formId: string) {
 }
 
 // Get evaluations by a specific evaluator
-export async function getEvaluationsByEvaluator(evaluatorId: string) {
+// An evaluator's own scores: only with that evaluator's token, or for admins.
+export async function getEvaluationsByEvaluator(evaluatorId: string, evaluatorToken?: string) {
+    if (evaluatorToken) {
+        const evaluator = await getEvaluatorByToken(evaluatorToken)
+        if (!evaluator || evaluator.id !== evaluatorId) return []
+    } else if (!(await isAdminSession())) {
+        return []
+    }
+
     const supabase = getSupabase()
 
     const { data, error } = await supabase

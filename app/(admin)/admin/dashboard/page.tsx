@@ -10,7 +10,7 @@ async function getAdminStats() {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { count: eventsCount } = await supabase.from('events').select('*', { count: 'exact', head: true })
+    const { count: eventsCount, error: dbError } = await supabase.from('events').select('*', { count: 'exact', head: true })
     const { count: registrationsCount } = await supabase.from('registrations').select('*', { count: 'exact', head: true })
     const { count: clubsCount } = await supabase.from('clubs').select('*', { count: 'exact', head: true })
 
@@ -31,7 +31,24 @@ async function getAdminStats() {
         .order('created_at', { ascending: false })
         .limit(5)
 
+    // Real health checks (this panel used to be hard-coded "All Systems Operational")
+    const { data: lastReminder } = await supabase
+        .from('events')
+        .select('reminder_sent_at')
+        .not('reminder_sent_at', 'is', null)
+        .order('reminder_sent_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    const health = {
+        databaseOk: !dbError,
+        emailConfigured: !!process.env.RESEND_API_KEY,
+        remindersConfigured: !!process.env.CRON_SECRET,
+        lastReminderAt: (lastReminder?.reminder_sent_at as string | null) || null,
+    }
+
     return {
+        health,
         events: eventsCount || 0,
         registrations: registrationsCount || 0,
         revenue: totalRevenue,
@@ -185,33 +202,54 @@ export default async function AdminDashboardPage() {
                             </h2>
                         </div>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                                    <span className="text-green-400 font-medium">All Systems Operational</span>
-                                </div>
-                            </div>
+                            {(() => {
+                                const issues = [
+                                    !stats.health.databaseOk && 'Database is not reachable',
+                                    !stats.health.emailConfigured && 'Email sending is not configured (RESEND_API_KEY)',
+                                    !stats.health.remindersConfigured && 'Event reminders are not scheduled (CRON_SECRET missing)',
+                                    stats.health.remindersConfigured && !stats.health.lastReminderAt && 'Event reminders have never been sent',
+                                ].filter(Boolean) as string[]
+                                return issues.length === 0 ? (
+                                    <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                                        <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                                        <span className="text-green-400 font-medium">All checks passing</span>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                                        <p className="text-amber-400 font-medium mb-1">{issues.length} {issues.length === 1 ? 'issue needs' : 'issues need'} attention</p>
+                                        <ul className="text-sm text-amber-200/80 list-disc pl-5 space-y-0.5">
+                                            {issues.map(issue => <li key={issue}>{issue}</li>)}
+                                        </ul>
+                                    </div>
+                                )
+                            })()}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-4 rounded-xl bg-white/5 border border-white/5">
                                     <p className="text-gray-500 text-xs uppercase tracking-wide">Database</p>
                                     <p className="text-white font-medium mt-1 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-green-500" />
-                                        Connected
+                                        <span className={`w-2 h-2 rounded-full ${stats.health.databaseOk ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        {stats.health.databaseOk ? 'Connected' : 'Error'}
                                     </p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                                    <p className="text-gray-500 text-xs uppercase tracking-wide">Authentication</p>
+                                    <p className="text-gray-500 text-xs uppercase tracking-wide">Email</p>
                                     <p className="text-white font-medium mt-1 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-green-500" />
-                                        Active
+                                        <span className={`w-2 h-2 rounded-full ${stats.health.emailConfigured ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        {stats.health.emailConfigured ? 'Configured' : 'Key missing'}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
                                 <TrendingUp className="w-5 h-5 text-blue-400" />
                                 <div>
-                                    <p className="text-white font-medium">Platform Performance</p>
-                                    <p className="text-gray-500 text-sm">99.9% uptime this season</p>
+                                    <p className="text-white font-medium">Event Reminders</p>
+                                    <p className="text-gray-500 text-sm">
+                                        {!stats.health.remindersConfigured
+                                            ? 'Not scheduled — set CRON_SECRET and a cron job'
+                                            : stats.health.lastReminderAt
+                                                ? `Last sent ${formatDate(stats.health.lastReminderAt)}`
+                                                : 'Scheduled, none sent yet'}
+                                    </p>
                                 </div>
                             </div>
 

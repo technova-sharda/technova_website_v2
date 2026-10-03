@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server'
 import { createClient } from "@supabase/supabase-js"
 import { auth } from "@/lib/auth"
 import JSZip from 'jszip'
-import { generateCertificateWithTemplate } from '@/lib/certificates/generate'
+import { generateCertificateWithTemplate, generatePositionCertificate } from '@/lib/certificates/generate'
+import { getSignedCertificateUrl } from '@/lib/certificates/storage'
 import { formatDateShort } from '@/lib/utils'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
 
@@ -12,7 +13,7 @@ const supabase = createClient(
 )
 
 // Rate limit: 2 bulk downloads per minute (more restrictive for heavy operation)
-const RATE_LIMIT_CONFIG = { limit: 2, windowSeconds: 60 }
+const RATE_LIMIT_CONFIG = { limit: 2, windowSeconds: 60, bucket: 'certificate-bulk' }
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -65,35 +66,26 @@ export async function GET(request: NextRequest) {
             .eq('event_id', eventId)
             .single()
 
-        // Get signed URL for template if needed
-        let templateUrl = template?.template_url || null
-        if (templateUrl) {
-            try {
-                const url = new URL(templateUrl)
-                const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/certificates\/(.+)/)
-                if (pathMatch && pathMatch[1]) {
-                    const { data: signedData } = await supabase.storage
-                        .from('certificates')
-                        .createSignedUrl(pathMatch[1], 300) // 5 minutes for bulk
-                    if (signedData?.signedUrl) {
-                        templateUrl = signedData.signedUrl
-                    }
-                }
-            } catch (e) {
-                console.log('Could not generate signed URL:', e)
-            }
-        }
+        // Template bucket is private; sign the URL for the generator
+        const templateUrl = template?.template_url ? await getSignedCertificateUrl(template.template_url, 300) : null
 
         // Get all certificates for this event
         const { data: certificates, error: certError } = await supabase
             .from('certificates')
-            .select('id, certificate_id, user_id, certificate_type, role_title')
+            .select('id, certificate_id, user_id, certificate_type, role_title, position_id, file_url, qr_region')
             .eq('event_id', eventId)
             .eq('status', 'valid')
 
         if (certError || !certificates || certificates.length === 0) {
             return Response.json({ error: 'No certificates found' }, { status: 404 })
         }
+
+        // QR placement per position for ready-made certificates
+        const { data: positions } = await supabase
+            .from('certificate_positions')
+            .select('id, qr_region')
+            .eq('event_id', eventId)
+        const positionQr = new Map((positions || []).map(p => [p.id, p.qr_region]))
 
         // Get user details
         const userIds = certificates.map(c => c.user_id)
@@ -115,7 +107,14 @@ export async function GET(request: NextRequest) {
             if (!user) continue
 
             try {
-                const pdfBytes = await generateCertificateWithTemplate(
+                const pdfBytes = cert.position_id && cert.file_url
+                    ? await generatePositionCertificate(
+                        cert.file_url,
+                        cert.qr_region || positionQr.get(cert.position_id),
+                        cert.certificate_id,
+                        baseUrl
+                    )
+                    : await generateCertificateWithTemplate(
                     templateUrl,
                     template?.qr_region || null,
                     template?.text_regions || [],
@@ -130,9 +129,12 @@ export async function GET(request: NextRequest) {
                     baseUrl
                 )
 
-                // Sanitize filename
+                // Sanitize filename; position certificates get their own folder
                 const safeName = (user.name || 'participant').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)
-                const fileName = `${safeName}_${cert.certificate_id}.pdf`
+                const folder = cert.role_title && cert.position_id
+                    ? `${cert.role_title.replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'Positions'}/`
+                    : ''
+                const fileName = `${folder}${safeName}_${cert.certificate_id}.pdf`
 
                 zip.file(fileName, pdfBytes)
             } catch (genError) {

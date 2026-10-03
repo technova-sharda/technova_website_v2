@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { FEEDBACK_XP_REWARD } from '@/lib/constants/feedback'
+import { incrementUserXp } from './increment'
 
 // ==========================================
 // Types
@@ -68,25 +69,30 @@ export async function awardXPForFeedback(
         }
     }
 
-    // Update user's total XP points directly
-    const { data: user } = await supabase
-        .schema('next_auth' as unknown as 'public')
-        .from('users')
-        .select('xp_points')
-        .eq('id', userId)
-        .single()
+    // Claim the award first, atomically: only one request can flip xp_awarded
+    // from false/null to true. Previously the flag was set after awarding, so
+    // two quick submissions could both pass the check above and award twice.
+    const { data: claimed, error: claimError } = await supabase
+        .from('feedback_responses')
+        .update({ xp_awarded: true })
+        .eq('id', response.id)
+        .or('xp_awarded.is.null,xp_awarded.eq.false')
+        .select('id')
 
-    const currentXP = user?.xp_points || 0
-    const newXP = currentXP + FEEDBACK_XP_REWARD
+    if (claimError) {
+        console.error('[Feedback] Failed to claim XP award:', claimError.message)
+        return { success: false, xpAwarded: 0, message: 'Failed to update XP' }
+    }
+    if (!claimed || claimed.length === 0) {
+        return { success: false, xpAwarded: 0, message: 'XP already awarded for this feedback' }
+    }
 
-    const { error: updateError } = await supabase
-        .schema('next_auth' as unknown as 'public')
-        .from('users')
-        .update({ xp_points: newXP })
-        .eq('id', userId)
-
-    if (updateError) {
-        console.error('Feedback XP Update Error:', updateError)
+    // Update user's total XP points (atomic, so concurrent awards aren't lost)
+    const xpUpdate = await incrementUserXp(supabase, userId, FEEDBACK_XP_REWARD)
+    if (!xpUpdate.ok) {
+        console.error('Feedback XP Update Error:', xpUpdate.error)
+        // Release the claim so the award can be retried
+        await supabase.from('feedback_responses').update({ xp_awarded: false }).eq('id', response.id)
         return {
             success: false,
             xpAwarded: 0,
@@ -94,41 +100,20 @@ export async function awardXPForFeedback(
         }
     }
 
-    // CRITICAL: Record this in xp_awards history so it shows up on profile
-    // Supabase returns errors in response, not by throwing
+    // Record this in xp_awards history so it shows up on profile.
+    // (xp_awards has only user_id, event_id, xp_amount, awarded_at: the old first
+    // attempt also sent source/description, which don't exist, so it always failed
+    // before falling back to this insert.)
     const { error: xpInsertError } = await supabase.from('xp_awards').insert({
         user_id: userId,
         event_id: eventId,
-        xp_amount: FEEDBACK_XP_REWARD,
-        source: 'feedback',
-        description: 'Completed Feedback Form'
+        xp_amount: FEEDBACK_XP_REWARD
     })
 
     if (xpInsertError) {
+        // 23505: xp_awards allows one row per (user, event), e.g. a second day's feedback
+        // form for a multi-day event. The XP total above still includes it.
         console.error('[XP Awards] Insert Error:', xpInsertError.message, xpInsertError.code)
-        // Try simpler insert without optional columns (source, description)
-        const { error: simpleInsertError } = await supabase.from('xp_awards').insert({
-            user_id: userId,
-            event_id: eventId,
-            xp_amount: FEEDBACK_XP_REWARD
-        })
-        if (simpleInsertError) {
-            console.error('[XP Awards] Simple Insert also failed:', simpleInsertError.message)
-        } else {
-            console.log('[XP Awards] Simple insert succeeded (without source/description)')
-        }
-    } else {
-        console.log(`[XP Awards] Recorded ${FEEDBACK_XP_REWARD} XP for user ${userId}`)
-    }
-
-    // Mark XP as awarded in the response
-    const { error: markError } = await supabase
-        .from('feedback_responses')
-        .update({ xp_awarded: true })
-        .eq('id', response.id)
-
-    if (markError) {
-        console.error('[Feedback] Failed to mark xp_awarded:', markError.message)
     }
 
     return {

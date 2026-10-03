@@ -5,6 +5,10 @@ import { auth } from "@/lib/auth"
 import * as xlsx from 'xlsx'
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
+import { sendEmailOrThrow } from "@/lib/email/send"
+import { headers } from "next/headers"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { fetchAllRows } from "@/lib/supabase/fetch-all"
 
 export async function getSupabase() {
     return createServerClient(
@@ -688,7 +692,7 @@ export async function sendEvaluatorInvite(id?: string) {
     for (const ev of evaluators) {
         try {
             const magicLink = `https://www.technovashardauniversity.in/evaluate?token=${ev.magic_token}`;
-            await resend.emails.send({
+            await sendEmailOrThrow(resend, {
                 from: "Technova Society <no-reply@technovashardauniversity.in>",
                 to: ev.email,
                 subject: "Invitation: Official Evaluator - CodeMania Hackathon",
@@ -1311,7 +1315,7 @@ export async function emailShortlistedTeams() {
         for (const participant of participants) {
             if (!participant.email) continue
             try {
-                await resend.emails.send({
+                await sendEmailOrThrow(resend, {
                     from: "Technova Society <no-reply@technovashardauniversity.in>",
                     to: participant.email,
                     subject: "🎉 Congratulations! Your Team has been Shortlisted - CodeMania Hackathon",
@@ -1403,7 +1407,7 @@ export async function emailSingleTeam(teamId: string) {
 
     for (const participant of emails) {
         try {
-            await resend.emails.send({
+            await sendEmailOrThrow(resend, {
                 from: "Technova Society <no-reply@technovashardauniversity.in>",
                 to: participant.email,
                 subject: "🎉 Congratulations! Your Team has been Shortlisted - CodeMania Hackathon",
@@ -1531,7 +1535,7 @@ export async function blastCustomEmail(subject: string, htmlBody: string, target
 
     for (const email of uniqueEmails) {
         try {
-            await resend.emails.send({
+            await sendEmailOrThrow(resend, {
                 from: "Technova Society <no-reply@technovashardauniversity.in>",
                 to: email,
                 subject: subject,
@@ -1798,7 +1802,8 @@ export async function getFoodLogsData() {
             'Team Name': log.hackathon_participants?.hackathon_teams?.name || '',
             'Team ID': log.hackathon_participants?.hackathon_teams?.team_code || '',
             'Meal Type': log.meal_type || '',
-            'Scanned At': log.scanned_at ? new Date(log.scanned_at).toLocaleString() : '',
+            // Explicit IST: the server runs in UTC
+            'Scanned At': log.scanned_at ? new Date(log.scanned_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
         }))
     }
 }
@@ -2460,7 +2465,7 @@ export async function sendAttendeeQrEmails(eventTag: string, eventName: string =
         try {
             const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(attendee.qr_code)}`
 
-            await resend.emails.send({
+            await sendEmailOrThrow(resend, {
                 from: "Technova Society <no-reply@technovashardauniversity.in>",
                 to: attendee.email,
                 subject: `🎫 Your Attendance QR Code — ${eventName}`,
@@ -2647,35 +2652,75 @@ export async function getAttendanceEventSettings() {
     }
 }
 
-// Public: student self-registration — lookup by email and update their details
-export async function lookupAttendeeByEmail(email: string) {
-    if (!email || !email.trim()) return { error: "Please enter your email." }
+// ------------------------------------------------------------------
+// Public attendance kiosk (/attendance/register) — no login by design.
+// Hardening, since anyone can call these:
+//  - emails must match exactly; `%`, `*` (pattern wildcards) are rejected,
+//    otherwise "%@gmail.com" would return a stranger's details
+//  - updates require the attendee's email as well as their id
+//  - per-IP rate limits slow down guessing
+// A full fix (email one-time code) is tracked in BUGS.md.
+// ------------------------------------------------------------------
 
+const KIOSK_EMAIL_PATTERN = /^[^\s@%*]+@[^\s@%*]+\.[^\s@%*]+$/
+const KIOSK_MAX_FIELD_LENGTH = 100
+
+async function kioskRateLimited(action: string, limit: number) {
+    const h = await headers()
+    const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || 'unknown'
+    return !checkRateLimit(`attendance-kiosk:${action}:ip:${ip}`, { limit, windowSeconds: 60 }).success
+}
+
+/** Exact, case-insensitive lookup without LIKE-wildcard surprises. */
+async function findAttendeeByExactEmail(email: string) {
+    const normalized = email.trim().toLowerCase()
     const supabase = await getSupabase()
     const { data, error } = await supabase
         .from('event_attendees')
-        .select('id, name, email, system_id, section, department, college, year, event_tag')
-        .ilike('email', email.trim())
-        .maybeSingle()
-
-    if (error || !data) return { error: "No registration found with this email. Please contact the event organizers." }
-
-    return { success: true, attendee: data }
+        .select('id, name, email, system_id, section, department, year')
+        .ilike('email', normalized)
+        .limit(5)
+    if (error) return { error: error.message, attendee: null }
+    const attendee = (data || []).find(a => (a.email || '').trim().toLowerCase() === normalized) || null
+    return { error: null, attendee }
 }
 
-export async function updateAttendeeDetails(attendeeId: string, details: { system_id: string, section: string, department: string }) {
+function cleanKioskField(value: unknown): string {
+    return typeof value === 'string' ? value.trim().slice(0, KIOSK_MAX_FIELD_LENGTH) : ''
+}
+
+// Public: student self-registration — lookup by email and update their details
+export async function lookupAttendeeByEmail(email: string) {
+    if (!email || !email.trim()) return { error: "Please enter your email." }
+    if (!KIOSK_EMAIL_PATTERN.test(email.trim())) return { error: "Please enter a valid email address." }
+    if (await kioskRateLimited('lookup', 15)) return { error: "Too many attempts. Please wait a minute and try again." }
+
+    const { attendee } = await findAttendeeByExactEmail(email)
+    if (!attendee) return { error: "No registration found with this email. Please contact the event organizers." }
+
+    return { success: true, attendee }
+}
+
+export async function updateAttendeeDetails(attendeeId: string, details: { system_id: string, section: string, department: string, year?: string, email?: string }) {
     if (!attendeeId) return { error: "Invalid attendee" }
+    const email = cleanKioskField(details.email)
+    if (!email || !KIOSK_EMAIL_PATTERN.test(email)) return { error: "Please look up your registration again." }
+    if (await kioskRateLimited('update', 10)) return { error: "Too many attempts. Please wait a minute and try again." }
+
+    // The id alone isn't proof of identity; the attendee's email must match too
+    const { attendee } = await findAttendeeByExactEmail(email)
+    if (!attendee || attendee.id !== attendeeId) return { error: "Could not verify your registration. Please look it up again." }
 
     const supabase = await getSupabase()
     const { error } = await supabase
         .from('event_attendees')
         .update({
-            system_id: details.system_id.trim() || null,
-            section: details.section.trim() || null,
-            department: details.department.trim() || null,
-            year: (details as any).year?.trim() || null
+            system_id: cleanKioskField(details.system_id) || null,
+            section: cleanKioskField(details.section) || null,
+            department: cleanKioskField(details.department) || null,
+            year: cleanKioskField(details.year) || null
         })
-        .eq('id', attendeeId)
+        .eq('id', attendee.id)
 
     if (error) return { error: error.message }
     return { success: true, message: "Your details have been updated successfully!" }
@@ -2685,24 +2730,26 @@ export async function registerNewAttendee(details: { name: string, email: string
     if (!details.name || !details.email || !details.system_id || !details.section || !details.department || !details.year) {
         return { error: "Please fill in all required fields." }
     }
+    if (!KIOSK_EMAIL_PATTERN.test(details.email.trim())) return { error: "Please enter a valid email address." }
+    if (await kioskRateLimited('register', 5)) return { error: "Too many attempts. Please wait a minute and try again." }
 
     const { eventTag } = await getAttendanceEventSettings()
     const supabase = await getSupabase()
 
     // Check if already exists
-    const { data: existing } = await supabase.from('event_attendees').select('id').ilike('email', details.email.trim()).maybeSingle()
+    const { attendee: existing } = await findAttendeeByExactEmail(details.email)
     if (existing) {
         return { error: "An attendee with this email is already registered. Please use the lookup feature instead." }
     }
 
     const { data, error } = await supabase.from('event_attendees').insert({
-        name: details.name.trim(),
-        email: details.email.trim(),
-        mobile: details.mobile?.trim() || null,
-        system_id: details.system_id.trim(),
-        section: details.section.trim(),
-        department: details.department.trim(),
-        year: details.year.trim(),
+        name: cleanKioskField(details.name),
+        email: cleanKioskField(details.email),
+        mobile: cleanKioskField(details.mobile) || null,
+        system_id: cleanKioskField(details.system_id),
+        section: cleanKioskField(details.section),
+        department: cleanKioskField(details.department),
+        year: cleanKioskField(details.year),
         event_tag: eventTag,
         qr_code: crypto.randomUUID()
     }).select('id, name, email, system_id, section, department, year').single()
@@ -2823,10 +2870,15 @@ export async function getGateStats() {
         .select('id', { count: 'exact', head: true })
 
     // Get the latest gate log per participant to determine who is currently outside
-    const { data: allLogs } = await supabase
-        .from('hackathon_gate_logs')
-        .select('participant_id, direction, scanned_at')
-        .order('scanned_at', { ascending: false })
+    // (paged: a single response stops at 1000 rows, which a busy hackathon passes)
+    const { data: allLogs } = await fetchAllRows<{ participant_id: string; direction: string; scanned_at: string }>((from, to) =>
+        supabase
+            .from('hackathon_gate_logs')
+            .select('participant_id, direction, scanned_at')
+            .order('scanned_at', { ascending: false })
+            .order('id', { ascending: false })
+            .range(from, to)
+    )
 
     // Build a map: participantId -> latest direction
     const latestDirection = new Map<string, string>()
@@ -2860,17 +2912,22 @@ export async function getOverdueParticipants() {
 
     const supabase = await getSupabase()
 
-    const { data: allLogs } = await supabase
-        .from('hackathon_gate_logs')
-        .select(`
-            participant_id, 
-            direction, 
-            scanned_at,
-            hackathon_participants (name, phone, hackathon_teams(name, team_code))
-        `)
-        .order('scanned_at', { ascending: false })
+    // Paged: a single response stops at 1000 rows
+    const { data: allLogs, error: logsError } = await fetchAllRows<any>((from, to) =>
+        supabase
+            .from('hackathon_gate_logs')
+            .select(`
+                participant_id, 
+                direction, 
+                scanned_at,
+                hackathon_participants (name, phone, hackathon_teams(name, team_code))
+            `)
+            .order('scanned_at', { ascending: false })
+            .order('id', { ascending: false })
+            .range(from, to)
+    )
 
-    if (!allLogs) return []
+    if (logsError) return []
 
     const latestLogs = new Map<string, any>()
     for (const log of allLogs) {
@@ -2916,20 +2973,25 @@ export async function getGateLogs() {
 
     const supabase = await getSupabase()
 
-    const { data: logs, error } = await supabase
-        .from('hackathon_gate_logs')
-        .select(`
-            id, direction, scanned_by, scanned_at,
-            hackathon_participants (
-                name, email, role,
-                hackathon_teams (name, team_code)
-            )
-        `)
-        .order('scanned_at', { ascending: true })
+    // Paged: the CSV export used to stop silently at 1000 rows
+    const { data: logs, error } = await fetchAllRows<any>((from, to) =>
+        supabase
+            .from('hackathon_gate_logs')
+            .select(`
+                id, direction, scanned_by, scanned_at,
+                hackathon_participants (
+                    name, email, role,
+                    hackathon_teams (name, team_code)
+                )
+            `)
+            .order('scanned_at', { ascending: true })
+            .order('id', { ascending: true })
+            .range(from, to)
+    )
 
     if (error) {
         console.error('[getGateLogs] error:', error)
-        return { error: error.message, data: [] }
+        return { error, data: [] }
     }
 
     // Group logs by participant to compute time-outside per exit→entry pair

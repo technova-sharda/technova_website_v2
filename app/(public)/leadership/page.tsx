@@ -35,7 +35,7 @@ const MENTORS = [
         role: "HoD, Dept. of CSE",
         message: "Computer Science & Engineering is one of the most vibrant department of Sharda University with varieties of specialized programs in Artificial Intelligence & Machine Learning, Cyber Security, Internet of Things, Data Science and Business Intelligence. To have holistic development of students of distinct programs of computer science and to grow the innovative culture among the students, Students Activity Clubs are functional. These clubs are headed by the team of students and they are performing in different dimensions of technology under the guidance of specialized faculty members. Several national and international students are contributing to develop themselves and other peers to excel among the multidisciplinary aspects. The club activities strengthens placements, startups, national/international competitions and research outcomes. We are proud to have high aimed and energetic students club performing exceptionally well since last five years.",
         quote: "Best Wishes to All My Students",
-        imagePath: "/assets/leadership/hod.png"
+        imagePath: "/assets/leadership/jayant_sekhar.jpg"
     },
     {
         name: "Dr. Rani Astya",
@@ -102,8 +102,22 @@ const TEAM_METADATA: Record<string, any> = {
         color: "text-[var(--sig-indigo)]",
         bg: "bg-[var(--sig-indigo)]/10",
         icon: Sparkles,
-        imagePath: null
+        imagePath: "/assets/team/technova_main/dushyant_prajapati.jpg"
     }
+}
+
+// Cards pinned to a fixed slot (1-based) on this page, regardless of role sorting
+const PINNED_POSITIONS: Record<string, number> = {
+    "Dushyant Prajapati": 3,
+}
+
+function applyPinnedPositions<T extends { name: string }>(members: T[]): T[] {
+    const result = members.filter(m => !(m.name in PINNED_POSITIONS))
+    members
+        .filter(m => m.name in PINNED_POSITIONS)
+        .sort((a, b) => PINNED_POSITIONS[a.name] - PINNED_POSITIONS[b.name])
+        .forEach(m => result.splice(Math.min(PINNED_POSITIONS[m.name] - 1, result.length), 0, m))
+    return result
 }
 
 const ensureAbsoluteUrl = (url: string) => {
@@ -143,7 +157,7 @@ export default function LeadershipPage() {
                             imagePath: meta.imagePath || getMemberPhotoPath(m.name)
                         }
                     })
-                    setTeamMembers(merged)
+                    setTeamMembers(applyPinnedPositions(merged))
                 }
             } catch (error) {
                 console.error("Failed to fetch executives:", error)

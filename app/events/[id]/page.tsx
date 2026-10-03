@@ -77,6 +77,10 @@ export default async function EventPage({
         }
     }
 
+    // Props of client components are sent to the browser, so the online meeting
+    // link only goes along when this visitor is registered.
+    const eventForClient = existingRegistration ? event : { ...event, meeting_link: null }
+
     return (
         <div className="min-h-screen bg-slate-50 pb-24 text-slate-900">
             <div className="h-64 md:h-96 w-full bg-gray-900 relative">
@@ -196,7 +200,7 @@ export default async function EventPage({
                         <div className="md:sticky md:top-24">
                             <div className="bg-white rounded-xl shadow-xl p-6 text-slate-900">
                                 <EventRegistrationCard
-                                    event={event}
+                                    event={eventForClient}
                                     user={user}
                                     existingRegistration={existingRegistration}
                                     qrCode={qrCode}

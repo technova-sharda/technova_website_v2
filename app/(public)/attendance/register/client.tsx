@@ -55,8 +55,9 @@ export default function AttendeeRegisterClient() {
             system_id: systemId,
             section: section,
             department: department,
-            year: year
-        } as any);
+            year: year,
+            email: attendee.email
+        });
         if (result.error) {
             setError(result.error);
         } else {

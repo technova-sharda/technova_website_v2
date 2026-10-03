@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendEventReminders } from '@/lib/actions/notifications'
+
+// Sending can take a while for big events
+export const maxDuration = 60
+import { sendEventReminders } from '@/lib/server/event-reminders'
 
 /**
  * Cron endpoint for sending event reminders
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
         // Send reminders
         const result = await sendEventReminders()
 
-        console.log(`[Cron] Event reminders: ${result.eventsSent} events, ${result.emailsSent} emails sent`)
+        console.log(`[Cron] Event reminders: ${result.eventsSent} events, ${result.emailsSent} emails sent, ${result.emailsFailed} failed`)
 
         return NextResponse.json(result)
     } catch (error) {

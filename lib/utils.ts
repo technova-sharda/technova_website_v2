@@ -25,7 +25,9 @@ function getISTParts(date: Date | string) {
         hour: 'numeric',
         minute: 'numeric',
         second: 'numeric',
-        hour12: false
+        // 'h23' (0-23). `hour12: false` makes some engines (older Chrome/Safari)
+        // report midnight as "24", which turned 00:30 into "12:30 PM".
+        hourCycle: 'h23'
     })
 
     const parts = formatter.formatToParts(d)
@@ -35,7 +37,7 @@ function getISTParts(date: Date | string) {
         year: getPart('year'),
         month: getPart('month'), // 1-12
         day: getPart('day'),
-        hour: parseInt(getPart('hour')),
+        hour: parseInt(getPart('hour')) % 24,
         minute: getPart('minute').padStart(2, '0')
     }
 }

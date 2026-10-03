@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { istDateKey, spansMultipleIstDays } from '@/lib/dates/ist'
 import { auth } from '@/lib/auth'
 
 const supabase = createClient(
@@ -37,22 +38,24 @@ export async function GET(
         if (event) {
             const start = new Date(event.start_time)
             const end = event.end_time ? new Date(event.end_time) : start
-            const isMultiDay = event.is_multi_day || start.toDateString() !== end.toDateString()
+            // IST calendar days, matching how daily check-ins are keyed (the server runs in UTC)
+            const isMultiDay = event.is_multi_day || spansMultipleIstDays(start, end)
 
             if (isMultiDay) {
-                // Generate list of days, excluding holidays
-                const current = new Date(start)
-                while (current <= end) {
-                    const dateStr = current.toISOString().split('T')[0]
-                    // Only add if not in excluded dates (holidays)
+                // Every IST date from the start day to the end day, excluding holidays.
+                // (The old loop stepped from the start *time*, so a last day whose end
+                // time was earlier in the day than the start time was dropped.)
+                const DAY_MS = 24 * 60 * 60 * 1000
+                const lastDay = Date.parse(`${istDateKey(end)}T00:00:00Z`)
+                for (let day = Date.parse(`${istDateKey(start)}T00:00:00Z`); day <= lastDay; day += DAY_MS) {
+                    const dateStr = new Date(day).toISOString().slice(0, 10)
                     if (!excludedDates.includes(dateStr)) {
                         eventDaysList.push(dateStr)
                     }
-                    current.setDate(current.getDate() + 1)
                 }
                 eventDays = eventDaysList.length
             } else {
-                eventDaysList = [start.toISOString().split('T')[0]]
+                eventDaysList = [istDateKey(start)]
             }
         }
 
@@ -102,8 +105,7 @@ export async function GET(
         // Get event start date string for remapping early check-ins
         let eventStartDateStr = ''
         if (event) {
-            const start = new Date(event.start_time)
-            eventStartDateStr = start.toISOString().split('T')[0]
+            eventStartDateStr = istDateKey(event.start_time)
         }
 
         dailyCheckins?.forEach(c => {
@@ -122,7 +124,7 @@ export async function GET(
 
         // Map users to registrations
         const userMap = new Map(users?.map(u => [u.id, u]) || [])
-        const today = new Date().toISOString().split('T')[0]
+        const today = istDateKey(new Date())
 
         const attendees = registrations.map(reg => {
             const user = userMap.get(reg.user_id)

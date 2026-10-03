@@ -1,6 +1,7 @@
 /**
  * Simple in-memory rate limiter for API routes
  * Note: For production at scale, use Redis-based rate limiting
+ * (on serverless each instance has its own memory, so limits are per instance).
  */
 
 interface RateLimitEntry {
@@ -25,6 +26,12 @@ export interface RateLimitConfig {
     limit: number
     /** Time window in seconds */
     windowSeconds: number
+    /**
+     * Separate counter per route. Without it, every route shared one counter per
+     * IP/user, so e.g. polling the hackathon live page used up the allowance for
+     * certificate downloads from the same network.
+     */
+    bucket?: string
 }
 
 export interface RateLimitResult {
@@ -44,7 +51,7 @@ export function checkRateLimit(
     config: RateLimitConfig
 ): RateLimitResult {
     const now = Date.now()
-    const key = identifier
+    const key = config.bucket ? `${config.bucket}:${identifier}` : identifier
     const entry = store.get(key)
 
     // If no entry or expired, create new one

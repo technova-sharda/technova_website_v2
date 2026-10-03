@@ -105,6 +105,9 @@ export interface TextRegion {
   color: string;      // hex color
   fontWeight?: 'normal' | 'bold';
   alignment?: 'left' | 'center' | 'right';
+  fontFamily?: string;       // id from CERTIFICATE_FONTS, or 'custom'
+  customFontPath?: string;   // storage path in 'certificates' bucket when fontFamily === 'custom'
+  letterSpacing?: number;    // extra spacing between letters, same units as fontSize
 }
 
 export interface SignatureRegion {
@@ -134,8 +137,12 @@ export interface Certificate {
   template_id: string | null;
   certificate_type: CertificateType;
   role_title?: string;
+  position_id?: string | null;
+  file_url?: string | null;
+  qr_region?: QRRegion | null;
+  email_sent_at?: string | null;
   issued_at: string;
-  status: 'valid' | 'revoked';
+  status: 'pending' | 'valid' | 'revoked';
   revoked_at?: string;
   revoked_reason?: string;
   downloaded_count: number;
@@ -154,6 +161,16 @@ export interface Certificate {
     name: string | null;
     email: string | null;
   };
+}
+
+export interface CertificatePosition {
+  id: string;
+  event_id: string;
+  title: string;
+  sort_order: number;
+  qr_region: QRRegion;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CertificateWithDetails extends Certificate {

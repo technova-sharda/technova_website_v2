@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@supabase/supabase-js"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
+import { sendEmailOrThrow } from "@/lib/email/send"
 import { render } from "@react-email/render"
 import FormSubmissionEmail from "@/emails/form-submission"
 
@@ -85,7 +86,7 @@ export async function updateForm(id: string, formData: FormData) {
 
 export async function updateFormSettings(formId: string, settings: {
     title?: string
-    description?: string
+    description?: string | null  // null clears it (the settings form sends null for an empty box)
     is_active?: boolean
     is_published?: boolean
     allow_edit?: boolean
@@ -418,7 +419,7 @@ export async function submitFormResponse(formId: string, answers: any[], referre
             responses: responseSummary
         }))
 
-        await resend.emails.send({
+        await sendEmailOrThrow(resend, {
             from: 'Technova <noreply@technovashardauniversity.in>',
             to: session.user.email!,
             subject: `✅ Submission Received: ${form.title}`,
@@ -581,7 +582,8 @@ export async function exportFormResponsesToCSV(formId: string) {
             // Escape quotes and wrap in quotes for CSV
             row.push(`"${val.replace(/"/g, '""')}"`)
         }
-        row.push(r.created_at ? new Date(r.created_at).toLocaleString() : "")
+        // Explicit IST: the server runs in UTC
+        row.push(r.created_at ? new Date(r.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "")
         return row.join(",")
     })
 
@@ -654,7 +656,7 @@ export async function sendEmailToRespondents(
             const personalizedBody = body.replace(/\{\{name\}\}/g, user.name || 'Student')
 
             try {
-                await resend.emails.send({
+                await sendEmailOrThrow(resend, {
                     from: 'Technova <noreply@technovashardauniversity.in>',
                     to: user.email,
                     subject: subject,

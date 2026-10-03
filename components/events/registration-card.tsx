@@ -37,6 +37,7 @@ interface EventData {
     is_past_event?: boolean
     status?: string
     end_time?: string
+    registrations_closed?: boolean
 }
 
 interface UserData {
@@ -209,7 +210,7 @@ export function EventRegistrationCard({
                             className="w-full py-2 text-red-600 hover:text-red-700 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                         >
                             <XCircle className="w-4 h-4" />
-                            Can't attend? Cancel registration
+                            Can&apos;t attend? Cancel registration
                         </button>
                     ) : (
                         <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 space-y-4">
@@ -273,6 +274,9 @@ export function EventRegistrationCard({
     const registeredCount = event.registered_count || 0
     const filledPercentage = Math.min((registeredCount / event.capacity) * 100, 100)
     const isFull = registeredCount >= event.capacity
+    // Admin pressed "Stop registrations"
+    const isClosed = !!event.registrations_closed
+    const cannotRegister = isFull || isClosed
 
     return (
         <div className="w-full md:w-80 bg-white p-6 rounded-xl shadow-lg border border-slate-200 text-slate-900">
@@ -296,14 +300,17 @@ export function EventRegistrationCard({
 
             <button
                 onClick={handleRegisterClick}
-                disabled={loading || isFull}
-                className={`w-full py-3 rounded-xl font-bold text-white transition-all transform active:scale-95 ${isFull
+                disabled={loading || cannotRegister}
+                className={`w-full py-3 rounded-xl font-bold text-white transition-all transform active:scale-95 ${cannotRegister
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-black hover:bg-gray-800 shadow-lg hover:shadow-xl"
                     }`}
             >
-                {loading ? "Processing..." : isFull ? "Event Full" : event.price > 0 ? `Pay ₹${event.price}` : "Register Now"}
+                {loading ? "Processing..." : isClosed ? "Registrations Closed" : isFull ? "Event Full" : event.price > 0 ? `Pay ₹${event.price}` : "Register Now"}
             </button>
+            {isClosed && (
+                <p className="text-xs text-gray-500 text-center mt-2">Registration time is up for this event.</p>
+            )}
 
             {showModal && user && (
                 <RegistrationModal
