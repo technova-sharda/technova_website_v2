@@ -11,7 +11,7 @@ interface NavbarProps {
         name?: string | null
         email?: string | null
         image?: string | null
-        role?: 'student' | 'admin' | 'super_admin' | 'evaluator'
+        role?: 'student' | 'admin' | 'super_admin' | 'evaluator' | 'student_lead'
     }
 }
 

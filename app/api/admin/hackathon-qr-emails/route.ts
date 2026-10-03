@@ -211,6 +211,8 @@ export async function POST(request: NextRequest) {
                     html
                 })
 
+                // Resend reports failures in the result instead of throwing
+                if (result.error) throw new Error(result.error.message)
                 console.log(`[QR Email] ✅ Sent to ${recipientEmail} for Team "${team.name}" (${qrMembers.length} QR codes). Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
 
                 // Mark team as emailed

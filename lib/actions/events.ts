@@ -332,12 +332,49 @@ export async function togglePastEvent(eventId: string) {
     return { success: true, isPastEvent: newValue }
 }
 
+/**
+ * Admin "Stop registrations" / "Reopen registrations" switch.
+ * Existing registrations are untouched; only new sign-ups are refused.
+ */
+export async function setRegistrationsClosed(eventId: string, closed: boolean) {
+    const session = await auth()
+    if (!session || !['admin', 'super_admin'].includes(session.user.role)) {
+        throw new Error("Unauthorized")
+    }
+
+    const supabase = await getSupabase()
+
+    const { data: event, error } = await supabase.from('events')
+        .update({
+            registrations_closed: closed,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', eventId)
+        .select('id, slug, registrations_closed')
+        .maybeSingle()
+
+    if (error || !event) {
+        console.error("Set Registrations Closed Error:", error)
+        throw new Error("Failed to update registrations")
+    }
+
+    revalidatePath("/events")
+    revalidatePath("/admin/events")
+    revalidatePath("/events/[id]", "page")  // public event pages are addressed by slug or id
+    revalidatePath(`/admin/events/${eventId}`)
+
+    return { success: true, registrationsClosed: event.registrations_closed as boolean }
+}
+
 export async function getPublicEvents() {
     const supabase = await getSupabase()
     // Include both live events AND past events (status='completed' or is_past_event=true)
+    // Only the columns the public events page renders. `*` sent every column
+    // (including online meeting links) to every visitor.
     const { data, error } = await supabase.from('events')
         .select(`
-            *,
+            id, slug, title, banner, banner_position, price, is_virtual, venue,
+            is_multi_day, start_time, end_time, is_past_event, status, created_at,
             club:clubs!events_club_id_fkey(name, logo_url)
         `)
         .in('status', ['live', 'completed']) // Include both live and completed events
@@ -350,6 +387,20 @@ export async function getEvents() {
     const supabase = await getSupabase()
     const { data } = await supabase.from('events').select('*').order('created_at', { ascending: false })
     return data || []
+}
+
+/** Online meeting links go only to admins and to students registered for the event. */
+async function canSeeMeetingLink(supabase: Awaited<ReturnType<typeof getSupabase>>, eventId: string): Promise<boolean> {
+    const session = await auth()
+    if (!session?.user?.id) return false
+    if (['admin', 'super_admin'].includes(session.user.role)) return true
+    const { data } = await supabase
+        .from('registrations')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+    return !!data
 }
 
 export async function getEventById(id: string) {
@@ -387,8 +438,13 @@ export async function getEventById(id: string) {
         }
     }
 
+    const meeting_link = event.meeting_link && await canSeeMeetingLink(supabase, event.id)
+        ? event.meeting_link
+        : null
+
     return {
         ...event,
+        meeting_link,
         registered_count: count || 0,
         poc_email: pocDetails?.email || null,
         poc_phone: pocDetails?.phone || null,
@@ -447,8 +503,13 @@ export async function getEventBySlugOrId(slugOrId: string) {
         }
     }
 
+    const meeting_link = event.meeting_link && await canSeeMeetingLink(supabase, event.id)
+        ? event.meeting_link
+        : null
+
     return {
         ...event,
+        meeting_link,
         registered_count: count || 0,
         poc_email: pocDetails?.email || null,
         poc_phone: pocDetails?.phone || null,

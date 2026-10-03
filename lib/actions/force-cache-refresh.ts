@@ -1,15 +1,16 @@
 'use server'
 
 import { revalidateTag } from 'next/cache'
-import { createAdminClient } from '@/lib/supabase/server'
-import { getServerSession } from 'next-auth'
+import { auth } from '@/lib/auth'
 
 /**
  * Force revalidate all leaderboard caches
  * Use this after manual database updates
  */
 export async function forceRevalidateLeaderboard() {
-    const session = await getServerSession()
+    // `getServerSession` (NextAuth v4) doesn't exist in Auth.js v5, so this button
+    // used to crash on every click. `auth()` is the v5 equivalent.
+    const session = await auth()
 
     // Only allow admins to force revalidation
     if (session?.user?.role !== 'super_admin' && session?.user?.role !== 'admin') {
@@ -17,26 +18,13 @@ export async function forceRevalidateLeaderboard() {
     }
 
     try {
-        // Revalidate leaderboard cache
-        revalidateTag('leaderboard')
-
-        // Revalidate all user rank caches
-        const supabase = createAdminClient()
-        const { data: users } = await supabase
-            .schema('next_auth')
-            .from('users')
-            .select('id')
-
-        if (users) {
-            users.forEach(user => {
-                revalidateTag(`user-${user.id}`)
-            })
-        }
+        // Every leaderboard cache entry, including each user's rank, carries the
+        // 'leaderboard' tag, so one call expires all of them (no need to load every user).
+        revalidateTag('leaderboard', { expire: 0 })
 
         return {
             success: true,
-            message: 'Leaderboard cache cleared successfully',
-            usersRevalidated: users?.length || 0
+            message: 'Leaderboard cache cleared successfully'
         }
     } catch (error) {
         console.error('Cache revalidation error:', error)

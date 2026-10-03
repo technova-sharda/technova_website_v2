@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { auth } from '@/lib/auth'
 import { revalidateTag } from 'next/cache'
+import { incrementUserXp } from '@/lib/xp/increment'
 
 export interface BugReportSubmission {
     title: string
@@ -87,36 +88,19 @@ export async function submitBugReport(data: BugReportSubmission): Promise<BugRep
                 .update({ xp_awarded: true })
                 .eq('id', report.id)
 
-            // Award XP to user
-            const { data: user } = await supabase
-                .schema('next_auth')
-                .from('users')
-                .select('xp_points')
-                .eq('id', session.user.id)
-                .single()
+            // Award XP to user (atomic, so concurrent awards aren't lost)
+            const xpUpdate = await incrementUserXp(supabase, session.user.id, xpToAward)
+            if (!xpUpdate.ok) {
+                console.error('Bug report XP update failed:', xpUpdate.error)
+            }
 
-            const currentXP = user?.xp_points || 0
-            const newXP = currentXP + xpToAward
+            // Not recorded in xp_awards: that table requires an event_id (NOT NULL) and
+            // has no 'source' column, so this insert always failed silently. Bug-report XP
+            // can only appear in XP history once the table allows non-event awards.
 
-            await supabase
-                .schema('next_auth')
-                .from('users')
-                .update({ xp_points: newXP })
-                .eq('id', session.user.id)
-
-            // Record in xp_awards (optional, for tracking)
-            await supabase
-                .from('xp_awards')
-                .insert({
-                    user_id: session.user.id,
-                    event_id: null,
-                    xp_amount: xpToAward,
-                    source: 'bug_report'
-                })
-
-            // Revalidate leaderboard
-            revalidateTag('leaderboard')
-            revalidateTag(`user-${session.user.id}`)
+            // Expire leaderboard caches so rankings update immediately
+            revalidateTag('leaderboard', { expire: 0 })
+            revalidateTag(`user-${session.user.id}`, { expire: 0 })
         }
 
         return {

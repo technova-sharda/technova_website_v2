@@ -37,6 +37,7 @@ export const MEMBER_PHOTOS: Record<string, { folder: string; filename: string }>
     "sameer": { folder: "technova_main", filename: "mohammad_sameer.png" },
     "masood_aslam": { folder: "technova_main", filename: "masood_aslam.png" },
     "masood": { folder: "technova_main", filename: "masood_aslam.png" },
+    "dushyant_prajapati": { folder: "technova_main", filename: "dushyant_prajapati.jpg" },
 
     // CyberPirates
     "aditya_dhanraj": { folder: "cyberpirates", filename: "aditya_dhanraj.jpg" },

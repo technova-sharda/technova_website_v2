@@ -2,9 +2,10 @@ import { NextResponse, NextRequest } from "next/server"
 import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit"
 import { getSupabase } from "@/lib/actions/hackathon"
 import { Resend } from "resend"
+import { sendEmailOrThrow } from "@/lib/email/send"
 
 export async function POST(req: NextRequest) {
-    const rateLimit = checkRateLimit(getClientIdentifier(req), { limit: 5, windowSeconds: 60 })
+    const rateLimit = checkRateLimit(getClientIdentifier(req), { limit: 5, windowSeconds: 60, bucket: 'team-update' })
     if (!rateLimit.success) {
         return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 })
     }
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
                         .eq('id', teamId)
                         .single()
 
-                    await resend.emails.send({
+                    await sendEmailOrThrow(resend, {
                         from: "Technova System <no-reply@technovashardauniversity.in>",
                         to: adminEmail,
                         subject: `⚡ Team Update: ${teamData?.name || 'Unknown'} (${teamData?.team_code || 'N/A'})`,

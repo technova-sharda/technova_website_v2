@@ -184,7 +184,7 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-purple-600" />
+                    <MessageSquare className="w-5 h-5 text-purple-400" />
                     <h3 className="text-lg font-semibold">Feedback Forms</h3>
                 </div>
                 <button
@@ -200,40 +200,40 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
             {analytics && forms.length > 0 && analytics.totalResponses > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Average Rating */}
-                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl border border-yellow-200">
-                        <div className="flex items-center gap-2 text-yellow-700 mb-2">
+                    <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 p-4 rounded-xl border border-yellow-500/20">
+                        <div className="flex items-center gap-2 text-yellow-300 mb-2">
                             <Star className="w-4 h-4 fill-current" />
                             <span className="text-sm font-medium">Average Rating</span>
                         </div>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold text-yellow-800">
+                            <span className="text-3xl font-bold text-yellow-200">
                                 {analytics.averageRating ?? '—'}
                             </span>
-                            <span className="text-yellow-600">/5</span>
+                            <span className="text-yellow-400">/5</span>
                         </div>
                         <div className="flex gap-1 mt-2">
                             {[1, 2, 3, 4, 5].map(n => (
                                 <Star
                                     key={n}
-                                    className={`w-4 h-4 ${n <= (analytics.averageRating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-yellow-200'}`}
+                                    className={`w-4 h-4 ${n <= (analytics.averageRating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-white/15'}`}
                                 />
                             ))}
                         </div>
                     </div>
 
                     {/* Response Rate */}
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                        <div className="flex items-center gap-2 text-blue-700 mb-2">
+                    <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-4 rounded-xl border border-blue-500/20">
+                        <div className="flex items-center gap-2 text-blue-300 mb-2">
                             <Percent className="w-4 h-4" />
                             <span className="text-sm font-medium">Response Rate</span>
                         </div>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold text-blue-800">{analytics.responseRate}%</span>
+                            <span className="text-3xl font-bold text-blue-200">{analytics.responseRate}%</span>
                         </div>
-                        <div className="text-sm text-blue-600 mt-1">
+                        <div className="text-sm text-blue-400 mt-1">
                             {analytics.totalResponses} of {analytics.totalRegistrations} registered
                         </div>
-                        <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+                        <div className="w-full bg-blue-500/20 rounded-full h-2 mt-2">
                             <div
                                 className="bg-blue-500 h-2 rounded-full transition-all"
                                 style={{ width: `${analytics.responseRate}%` }}
@@ -242,8 +242,8 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                     </div>
 
                     {/* Rating Distribution */}
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
-                        <div className="flex items-center gap-2 text-purple-700 mb-2">
+                    <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-4 rounded-xl border border-purple-500/20">
+                        <div className="flex items-center gap-2 text-purple-300 mb-2">
                             <BarChart3 className="w-4 h-4" />
                             <span className="text-sm font-medium">Rating Distribution</span>
                         </div>
@@ -254,14 +254,14 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                 const percent = total > 0 ? (count / total) * 100 : 0
                                 return (
                                     <div key={rating} className="flex items-center gap-2 text-xs">
-                                        <span className="w-3 text-purple-700">{rating}</span>
-                                        <div className="flex-1 bg-purple-200 rounded-full h-2">
+                                        <span className="w-3 text-purple-300">{rating}</span>
+                                        <div className="flex-1 bg-purple-500/20 rounded-full h-2">
                                             <div
                                                 className="bg-purple-500 h-2 rounded-full transition-all"
                                                 style={{ width: `${percent}%` }}
                                             />
                                         </div>
-                                        <span className="w-6 text-right text-purple-600">{count}</span>
+                                        <span className="w-6 text-right text-purple-400">{count}</span>
                                     </div>
                                 )
                             })}
@@ -272,17 +272,17 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
 
             {/* Online event feedback requirement toggle */}
             {isVirtual && forms.length > 0 && (
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
                     <label className="flex items-center gap-3 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={requiresFeedback}
                             onChange={handleToggleRequiresFeedback}
-                            className="w-4 h-4 text-purple-600 rounded"
+                            className="w-4 h-4 text-purple-400 rounded"
                         />
                         <div>
-                            <p className="font-medium text-purple-900">Require feedback for attendance</p>
-                            <p className="text-sm text-purple-700">Students must submit feedback before their attendance can be marked (for online check-in)</p>
+                            <p className="font-medium text-purple-200">Require feedback for attendance</p>
+                            <p className="text-sm text-purple-300">Students must submit feedback before their attendance can be marked (for online check-in)</p>
                         </div>
                     </label>
                 </div>
@@ -290,12 +290,12 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
 
             {/* Forms List */}
             {forms.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                <div className="text-center py-12 bg-white/[0.03] rounded-xl border-2 border-dashed border-white/10">
                     <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500 mb-4">No feedback forms created yet</p>
                     <button
                         onClick={() => setShowBuilder(true)}
-                        className="text-purple-600 hover:text-purple-700 font-medium"
+                        className="text-purple-400 hover:text-purple-300 font-medium"
                     >
                         Create your first feedback form
                     </button>
@@ -303,21 +303,21 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
             ) : (
                 <div className="space-y-4">
                     {forms.map(form => (
-                        <div key={form.id} className="border rounded-xl overflow-hidden">
+                        <div key={form.id} className="border border-white/10 rounded-xl overflow-hidden">
                             {/* Form Header */}
-                            <div className="p-4 bg-white">
+                            <div className="p-4 bg-zinc-900">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
                                             <h4 className="font-semibold">{form.title}</h4>
                                             {form.day_number && (
-                                                <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">
+                                                <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-300 rounded-full">
                                                     Day {form.day_number}
                                                 </span>
                                             )}
                                             <span className={`text-xs px-2 py-0.5 rounded-full ${form.is_released
-                                                ? form.closes_at ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'
-                                                : 'bg-yellow-100 text-yellow-700'
+                                                ? form.closes_at ? 'bg-white/5 text-gray-300' : 'bg-green-500/10 text-green-300'
+                                                : 'bg-yellow-500/10 text-yellow-300'
                                                 }`}>
                                                 {form.is_released
                                                     ? form.closes_at ? 'Closed' : 'Open'
@@ -359,7 +359,7 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                         {/* Preview */}
                                         <button
                                             onClick={() => setPreviewForm(form)}
-                                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-white/5 text-gray-300 rounded-lg text-sm hover:bg-white/10"
                                             title="Preview form"
                                         >
                                             <Eye className="w-3 h-3" />
@@ -368,7 +368,7 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                         {/* View responses */}
                                         <button
                                             onClick={() => handleViewResponses(form.id!)}
-                                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-500/10 text-blue-300 rounded-lg text-sm hover:bg-blue-500/20"
                                         >
                                             <Users className="w-3 h-3" />
                                             {expandedFormId === form.id ? 'Hide' : 'Responses'}
@@ -376,7 +376,7 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                         {/* Export */}
                                         <button
                                             onClick={() => handleExport(form.id!)}
-                                            className="flex items-center gap-1 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200"
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-purple-500/10 text-purple-300 rounded-lg text-sm hover:bg-purple-500/20"
                                             title="Export to Excel"
                                         >
                                             <Download className="w-3 h-3" />
@@ -384,14 +384,14 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                         {/* Edit */}
                                         <button
                                             onClick={() => { setEditingForm(form); setShowBuilder(true) }}
-                                            className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg text-sm"
+                                            className="px-3 py-1.5 text-gray-400 hover:bg-white/5 rounded-lg text-sm"
                                         >
                                             Edit
                                         </button>
                                         {/* Delete */}
                                         <button
                                             onClick={() => handleDelete(form.id!)}
-                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
+                                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg"
                                             title="Delete form"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -402,7 +402,7 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
 
                             {/* Responses Panel */}
                             {expandedFormId === form.id && (
-                                <div className="border-t bg-gray-50 p-4">
+                                <div className="border-t border-white/10 bg-white/[0.03] p-4">
                                     {loadingResponses ? (
                                         <div className="flex items-center justify-center py-8">
                                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -412,7 +412,7 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                     ) : (
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm">
-                                                <thead className="bg-gray-100">
+                                                <thead className="bg-white/5">
                                                     <tr>
                                                         <th className="text-left p-2 font-medium">Student</th>
                                                         <th className="text-left p-2 font-medium">System ID</th>
@@ -424,9 +424,9 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                                         ))}
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y">
+                                                <tbody className="divide-y divide-white/5">
                                                     {responses.map(resp => (
-                                                        <tr key={resp.id} className="hover:bg-white">
+                                                        <tr key={resp.id} className="hover:bg-white/[0.03]">
                                                             <td className="p-2">
                                                                 <div className="font-medium">{resp.user?.name || 'Unknown'}</div>
                                                                 <div className="text-xs text-gray-500">{resp.user?.email}</div>

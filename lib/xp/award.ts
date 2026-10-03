@@ -5,6 +5,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { calculateEventXP, canCalculateXP, type EventXPData } from './calculator'
 import { revalidateTag } from 'next/cache'
+import { istDateKey } from '@/lib/dates/ist'
+import { incrementUserXp } from './increment'
 
 // ==========================================
 // Types
@@ -107,32 +109,17 @@ export async function awardXPForAttendance(
         }
     }
 
-    // 5. Update user's total XP points (direct increment - more reliable than RPC)
-    const { data: user } = await supabase
-        .schema('next_auth' as unknown as 'public')
-        .from('users')
-        .select('xp_points')
-        .eq('id', userId)
-        .single()
-
-    const currentXP = user?.xp_points || 0
-    const newXP = currentXP + finalXP
-
-    const { error: updateError } = await supabase
-        .schema('next_auth' as unknown as 'public')
-        .from('users')
-        .update({ xp_points: newXP })
-        .eq('id', userId)
-
-    if (updateError) {
-        console.error('XP Update Error:', updateError)
+    // 5. Update user's total XP points (atomic, so concurrent awards aren't lost)
+    const xpUpdate = await incrementUserXp(supabase, userId, finalXP)
+    if (!xpUpdate.ok) {
+        console.error('XP Update Error:', xpUpdate.error)
         // XP was recorded in xp_awards, so we don't fail completely
         // but the user's total may not be updated
     }
 
-    // 6. Revalidate leaderboard cache to show updated rankings immediately
-    revalidateTag('leaderboard')
-    revalidateTag(`user-${userId}`)
+    // 6. Expire leaderboard caches so rankings update immediately
+    revalidateTag('leaderboard', { expire: 0 })
+    revalidateTag(`user-${userId}`, { expire: 0 })
 
     return {
         success: true,
@@ -195,8 +182,8 @@ export async function hasDailyCheckin(
 ): Promise<boolean> {
     const supabase = getSupabase()
 
-    // Format date as YYYY-MM-DD for database comparison
-    const dateStr = checkinDate.toISOString().split('T')[0]
+    // IST calendar date as YYYY-MM-DD (the server runs in UTC)
+    const dateStr = istDateKey(checkinDate)
 
     const { data } = await supabase
         .from('daily_checkins')
@@ -280,8 +267,8 @@ export async function awardDailyXP(
     // 2. Calculate total XP and daily distribution
     const { finalXP, dailyXP, eventDays, breakdown } = calculateEventXP(eventData)
 
-    // 3. Format check-in date
-    const dateStr = checkinDate.toISOString().split('T')[0]
+    // 3. Format check-in date (IST calendar date; the server runs in UTC)
+    const dateStr = istDateKey(checkinDate)
 
     // 4. Check if already checked in today
     const alreadyCheckedIn = await hasDailyCheckin(userId, eventId, checkinDate)
@@ -350,31 +337,16 @@ export async function awardDailyXP(
         }
     }
 
-    // 7. Update user's total XP points
-    const { data: user } = await supabase
-        .schema('next_auth' as unknown as 'public')
-        .from('users')
-        .select('xp_points')
-        .eq('id', userId)
-        .single()
-
-    const currentXP = user?.xp_points || 0
-    const newXP = currentXP + xpToAward
-
-    const { error: updateError } = await supabase
-        .schema('next_auth' as unknown as 'public')
-        .from('users')
-        .update({ xp_points: newXP })
-        .eq('id', userId)
-
-    if (updateError) {
-        console.error('XP Update Error:', updateError)
+    // 7. Update user's total XP points (atomic, so concurrent awards aren't lost)
+    const xpUpdate = await incrementUserXp(supabase, userId, xpToAward)
+    if (!xpUpdate.ok) {
+        console.error('XP Update Error:', xpUpdate.error)
         // Check-in was recorded, so we continue even if user XP update fails
     }
 
-    // 8. Revalidate leaderboard cache
-    revalidateTag('leaderboard')
-    revalidateTag(`user-${userId}`)
+    // 8. Expire leaderboard caches so rankings update immediately
+    revalidateTag('leaderboard', { expire: 0 })
+    revalidateTag(`user-${userId}`, { expire: 0 })
 
     const newDaysCheckedIn = daysCheckedIn + 1
     const remainingDays = Math.max(0, eventDays - newDaysCheckedIn)

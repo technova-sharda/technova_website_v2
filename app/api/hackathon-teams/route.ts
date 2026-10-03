@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/actions/hackathon"
 export const revalidate = 30
 
 export async function GET(req: NextRequest) {
-    const rateLimit = checkRateLimit(getClientIdentifier(req), { limit: 20, windowSeconds: 60 })
+    const rateLimit = checkRateLimit(getClientIdentifier(req), { limit: 20, windowSeconds: 60, bucket: 'hackathon-teams' })
     if (!rateLimit.success) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }

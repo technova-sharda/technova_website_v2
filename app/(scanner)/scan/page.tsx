@@ -1,5 +1,6 @@
 'use client'
 
+import { istDateKey } from '@/lib/dates/ist'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
@@ -686,7 +687,7 @@ export default function ScannerPage() {
                                     day: 'numeric',
                                     month: 'short'
                                 })
-                                const isToday = day === new Date().toISOString().split('T')[0]
+                                const isToday = day === istDateKey(new Date())
                                 const dayCheckedIn = allAttendees.filter(a => a.checkinDates?.includes(day)).length
 
                                 return (

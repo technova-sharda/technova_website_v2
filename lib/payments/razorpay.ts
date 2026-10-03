@@ -9,7 +9,7 @@ export const razorpay = new Razorpay({
 
 export async function createOrder(amount: number) {
     const options = {
-        amount: amount * 100, // Razorpay takes amount in paise
+        amount: Math.round(amount * 100), // Razorpay takes whole paise; 99.99 * 100 is 9998.999…
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
     }

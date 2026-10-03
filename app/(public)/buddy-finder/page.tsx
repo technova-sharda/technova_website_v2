@@ -105,6 +105,7 @@ function BuddyFinderContent() {
     const skill = searchParams.get('skill') || '';
 
     const [buddies, setBuddies] = useState<any[]>([]);
+    const [needsSignIn, setNeedsSignIn] = useState(false);
     const [loading, setLoading] = useState(true);
     const [lookingForTeam, setLookingForTeam] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
@@ -133,7 +134,9 @@ function BuddyFinderContent() {
         async function fetchBuddies() {
             setLoading(true);
             const results = await searchBuddies(query, skill);
-            setBuddies(results);
+            // null = not signed in (results include contact emails, so sign-in is required)
+            setNeedsSignIn(results === null);
+            setBuddies(results ?? []);
             setCurrentPage(1);
             setLoading(false);
         }
@@ -337,7 +340,20 @@ function BuddyFinderContent() {
                             <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400 mx-auto mb-6">
                                 <Users className="w-8 h-8" />
                             </div>
-                            {lookingForTeam ? (
+                            {needsSignIn ? (
+                                <>
+                                    <h3 className="text-2xl font-bold mb-2">Sign In to Find Buddies</h3>
+                                    <p className="text-gray-400 max-w-md mx-auto mb-6">
+                                        Buddy Finder shows students&apos; contact details, so it&apos;s available to signed-in Sharda students only.
+                                    </p>
+                                    <Link href="/login?callbackUrl=/buddy-finder">
+                                        <Button className="bg-purple-600 hover:bg-purple-500">
+                                            <ArrowRight className="w-4 h-4 mr-2" />
+                                            Sign In
+                                        </Button>
+                                    </Link>
+                                </>
+                            ) : lookingForTeam ? (
                                 <>
                                     <h3 className="text-2xl font-bold mb-2">No One Looking for a Team Yet</h3>
                                     <p className="text-gray-400 max-w-md mx-auto mb-6">

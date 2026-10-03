@@ -4,6 +4,7 @@ import { awardDailyXP } from '@/lib/xp'
 import { hasSubmittedEventFeedback } from '@/lib/actions/feedback'
 import { auth } from '@/lib/auth'
 import { checkRateLimit, getClientIdentifier } from '@/lib/rate-limit'
+import { spansMultipleIstDays } from '@/lib/dates/ist'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,10 +18,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: 'Unauthorized - Admin access required' }, { status: 401 })
     }
 
-    // Rate limiting: 30 scans per minute per user
+    // Rate limiting: 60 scans per minute per user (entry rushes can exceed one scan every 2s)
     const rateLimit = checkRateLimit(
         getClientIdentifier(req, session.user.id),
-        { limit: 30, windowSeconds: 60 }
+        { limit: 60, windowSeconds: 60, bucket: 'scan' }
     )
     if (!rateLimit.success) {
         return NextResponse.json({
@@ -54,11 +55,16 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: 'Registration not found' }, { status: 404 })
         }
 
-        // 2. Determine if this is a multi-day event
+        // Unpaid registrations (paid event, payment not captured) can't be checked in
+        if (registration.payment_status === 'pending') {
+            return NextResponse.json({ success: false, message: 'Payment not completed for this registration' }, { status: 402 })
+        }
+
+        // 2. Determine if this is a multi-day event (IST calendar days; the server runs in UTC)
         const eventStart = registration.events?.start_time ? new Date(registration.events.start_time) : null
         const eventEnd = registration.events?.end_time ? new Date(registration.events.end_time) : null
         const isMultiDay = registration.events?.is_multi_day ||
-            (eventStart && eventEnd && eventStart.toDateString() !== eventEnd.toDateString())
+            (eventStart && eventEnd && spansMultipleIstDays(eventStart, eventEnd))
 
         // 3. For single-day events: block if already attended
         // For multi-day events: allow re-scans (awardDailyXP handles per-day deduplication)

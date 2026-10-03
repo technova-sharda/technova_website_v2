@@ -9,6 +9,11 @@ async function getSupabase() {
     )
 }
 
+// Columns safe to send to public pages. Phone numbers are deliberately excluded:
+// they were never displayed but were included in every page's data.
+// (Emails stay: the leadership and club pages show them as "contact" buttons.)
+const PUBLIC_MEMBER_COLUMNS = 'id, club_id, name, role, email, linkedin_id, created_at'
+
 export async function getClubs() {
     const supabase = await getSupabase();
     // Sort clubs alphabetically by name
@@ -18,7 +23,7 @@ export async function getClubs() {
 
 export async function getClubMembers(clubId: string) {
     const supabase = await getSupabase();
-    const { data } = await supabase.from('club_members').select('*').eq('club_id', clubId)
+    const { data } = await supabase.from('club_members').select(PUBLIC_MEMBER_COLUMNS).eq('club_id', clubId)
     if (!data) return []
     return sortMembersByRole(data)
 }
@@ -31,7 +36,7 @@ export async function getClubMembersByName(clubName: string) {
 
     // Then get members
     // Then get members
-    const { data } = await supabase.from('club_members').select('*').eq('club_id', club.id)
+    const { data } = await supabase.from('club_members').select(PUBLIC_MEMBER_COLUMNS).eq('club_id', club.id)
 
     if (!data) return []
     return sortMembersByRole(data)
@@ -44,7 +49,7 @@ export async function getClubWithMembers(clubName: string) {
     if (!club) return null;
 
     // Get members
-    const { data: members } = await supabase.from('club_members').select('*').eq('club_id', club.id);
+    const { data: members } = await supabase.from('club_members').select(PUBLIC_MEMBER_COLUMNS).eq('club_id', club.id);
 
     return {
         club,

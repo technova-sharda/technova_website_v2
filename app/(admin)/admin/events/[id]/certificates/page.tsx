@@ -1,11 +1,12 @@
-import { Suspense } from "react"
 import Link from "next/link"
-import { ArrowLeft, Award, FileEdit } from "lucide-react"
+import { ArrowLeft, Award } from "lucide-react"
 import { getEventById } from "@/lib/actions/events"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { CertificateTemplateEditor } from "@/components/admin/CertificateTemplateEditor"
-import { CertificateManager } from "@/components/admin/CertificateManager"
+import { CertificatesWorkspace } from "@/components/admin/certificates/CertificatesWorkspace"
+
+// Sending certificates to a whole event runs inside this page's server actions
+export const maxDuration = 60
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -48,42 +49,7 @@ export default async function CertificatesPage({ params }: PageProps) {
                     </div>
                 </div>
 
-                {/* Content Tabs */}
-                <div className="space-y-8">
-                    {/* Template Editor Section */}
-                    <section>
-                        <div className="flex items-center gap-3 mb-4">
-                            <FileEdit className="w-5 h-5 text-violet-400" />
-                            <h2 className="text-xl font-semibold text-white">Certificate Template</h2>
-                        </div>
-                        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-                            <Suspense fallback={
-                                <div className="flex items-center justify-center py-12">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500"></div>
-                                </div>
-                            }>
-                                <CertificateTemplateEditor eventId={id} />
-                            </Suspense>
-                        </div>
-                    </section>
-
-                    {/* Certificate Manager Section */}
-                    <section>
-                        <div className="flex items-center gap-3 mb-4">
-                            <Award className="w-5 h-5 text-emerald-400" />
-                            <h2 className="text-xl font-semibold text-white">Issued Certificates</h2>
-                        </div>
-                        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-                            <Suspense fallback={
-                                <div className="flex items-center justify-center py-12">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500"></div>
-                                </div>
-                            }>
-                                <CertificateManager eventId={id} eventTitle={event.title} />
-                            </Suspense>
-                        </div>
-                    </section>
-                </div>
+                <CertificatesWorkspace eventId={id} eventTitle={event.title} />
             </div>
         </div>
     )

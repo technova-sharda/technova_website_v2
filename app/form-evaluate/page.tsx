@@ -32,9 +32,9 @@ export default async function FormEvaluatePage({ searchParams }: { searchParams:
     const form = await getFormById(evaluator.form_id)
     if (!form) redirect("/")
 
-    const candidates = await getFormCandidates(evaluator.form_id)
+    const candidates = await getFormCandidates(evaluator.form_id, token)
     const criteria = await getEvaluationCriteria(evaluator.form_id)
-    const existingEvaluations = await getEvaluationsByEvaluator(evaluator.id)
+    const existingEvaluations = await getEvaluationsByEvaluator(evaluator.id, token)
 
     // Get form fields for showing candidate answers
     const questionFields = form.fields.filter((f: any) => f.type !== "section")

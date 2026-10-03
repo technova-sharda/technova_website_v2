@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     const { checkRateLimit, getClientIdentifier } = await import('@/lib/rate-limit')
     const rateLimit = checkRateLimit(
         getClientIdentifier(req, session.user.id),
-        { limit: 5, windowSeconds: 60 }
+        { limit: 5, windowSeconds: 60, bucket: 'onboarding' }
     )
     if (!rateLimit.success) {
         return new Response("Too many requests. Please try again later.", { status: 429 })

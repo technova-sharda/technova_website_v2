@@ -12,17 +12,17 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
     const questions = form.questions || []
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8">
-            <div className="bg-white rounded-2xl max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-8">
+            <div className="bg-zinc-900 border border-white/10 text-white rounded-2xl max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 bg-zinc-900 border-b border-white/10 p-4 flex items-center justify-between rounded-t-2xl">
                     <div className="flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5 text-purple-600" />
+                        <MessageSquare className="w-5 h-5 text-violet-300" />
                         <h3 className="text-lg font-bold">Preview: {form.title}</h3>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-white/5 rounded-full transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -31,7 +31,7 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
                 {/* Form Preview */}
                 <div className="p-6 space-y-6">
                     {form.day_number && (
-                        <div className="inline-block px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                        <div className="inline-block px-3 py-1 bg-orange-500/10 text-orange-300 rounded-full text-sm font-medium">
                             Day {form.day_number} Feedback
                         </div>
                     )}
@@ -41,7 +41,7 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
                     ) : (
                         questions.map((question, index) => (
                             <div key={question.id || index} className="space-y-2">
-                                <label className="block font-medium text-gray-900">
+                                <label className="block font-medium text-white">
                                     {index + 1}. {question.label}
                                     {question.is_required && <span className="text-red-500 ml-1">*</span>}
                                 </label>
@@ -51,7 +51,7 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
                                     <input
                                         type="text"
                                         disabled
-                                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-400"
+                                        className="w-full px-4 py-2 border border-white/10 rounded-lg bg-black/40 text-gray-500 placeholder:text-gray-600"
                                         placeholder={question.placeholder || 'Text answer...'}
                                     />
                                 )}
@@ -60,7 +60,7 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
                                 {question.question_type === 'textarea' && (
                                     <textarea
                                         disabled
-                                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-400 min-h-[100px]"
+                                        className="w-full px-4 py-2 border border-white/10 rounded-lg bg-black/40 text-gray-500 placeholder:text-gray-600 min-h-[100px]"
                                         placeholder={question.placeholder || 'Long text answer...'}
                                     />
                                 )}
@@ -71,7 +71,7 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
                                         {[1, 2, 3, 4, 5].map((value) => (
                                             <Star
                                                 key={value}
-                                                className="w-8 h-8 text-gray-300"
+                                                className="w-8 h-8 text-white/20"
                                             />
                                         ))}
                                         <span className="text-sm text-gray-400 ml-2">1-5 star rating</span>
@@ -82,7 +82,8 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
                                 {question.question_type === 'select' && (
                                     <select
                                         disabled
-                                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-400"
+                                        style={{ colorScheme: 'dark' }}
+                                        className="w-full px-4 py-2 border border-white/10 rounded-lg bg-black/40 text-gray-500 placeholder:text-gray-600"
                                     >
                                         <option>Select an option...</option>
                                         {question.options?.map((opt) => (
@@ -121,14 +122,14 @@ export function FeedbackFormPreview({ form, onClose }: Props) {
                     {/* Submit button (disabled) */}
                     <button
                         disabled
-                        className="w-full py-3 bg-purple-400 text-white rounded-lg font-medium opacity-50 cursor-not-allowed"
+                        className="w-full py-3 bg-violet-600 text-white rounded-lg font-medium opacity-50 cursor-not-allowed"
                     >
                         Submit Feedback (Preview Only)
                     </button>
                 </div>
 
                 {/* Footer */}
-                <div className="border-t p-4 bg-gray-50 rounded-b-2xl">
+                <div className="border-t border-white/10 p-4 bg-black/30 rounded-b-2xl">
                     <p className="text-sm text-gray-500 text-center">
                         This is how students will see the feedback form
                     </p>

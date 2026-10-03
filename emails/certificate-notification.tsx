@@ -19,13 +19,18 @@ import * as React from "react";
 interface CertificateNotificationEmailProps {
     userName: string;
     eventName: string;
-    eventDate: string;
+    eventDate: string;          // already formatted, e.g. "19 – 20 Sep 2026"
     organizerName: string;
     certificateType: string;
-    roleTitle?: string;
+    roleTitle?: string;         // position title, e.g. "Top 1"
+    certificateId?: string;
+    issuedAt?: string;          // ISO date, used for the LinkedIn "add to profile" link
     downloadUrl: string;
     verifyUrl: string;
 }
+
+// Square 500×500 logo; keep width and height equal or it gets distorted
+const LOGO_URL = "https://www.technovashardauniversity.in/assets/logo/technova-new.png";
 
 export const CertificateNotificationEmail = ({
     userName,
@@ -34,103 +39,109 @@ export const CertificateNotificationEmail = ({
     organizerName,
     certificateType,
     roleTitle,
+    certificateId,
+    issuedAt,
     downloadUrl,
     verifyUrl,
 }: CertificateNotificationEmailProps) => {
-    const roleDisplay = roleTitle || getCertificateTypeLabel(certificateType);
+    const firstName = userName.trim().split(/\s+/)[0] || "there";
+    const isPosition = !!roleTitle && certificateType !== "participation";
+    const certificateName = isPosition
+        ? `${roleTitle} – ${eventName}`
+        : `Certificate of Participation – ${eventName}`;
 
     return (
         <Html>
             <Head />
-            <Preview>🎉 Your certificate for {eventName} is ready!</Preview>
+            <Preview>
+                {isPosition
+                    ? `Congratulations on securing ${roleTitle} at ${eventName}! Your certificate is ready.`
+                    : `Thank you for participating in ${eventName}. Your certificate is ready.`}
+            </Preview>
             <Body style={main}>
                 <Container style={container}>
-                    {/* Header */}
                     <Section style={header}>
-                        <Img
-                            src="https://www.technovashardauniversity.in/assets/logo/technova-new.png"
-                            width="150"
-                            height="50"
-                            alt="Technova"
-                            style={{ margin: "0 auto" }}
-                        />
+                        <Img src={LOGO_URL} width="84" height="84" alt="Technova" style={logo} />
                     </Section>
 
-                    {/* Main Content */}
+                    <Section style={accentBar(isPosition)} />
+
                     <Section style={content}>
+                        <Text style={eyebrow(isPosition)}>
+                            {isPosition ? `${roleTitle} · ${eventName}` : `Certificate of Participation`}
+                        </Text>
+
                         <Heading style={h1}>
-                            🎉 Certificate Ready!
+                            {isPosition ? `Congratulations, ${firstName}!` : `Thank you, ${firstName}!`}
                         </Heading>
 
                         <Text style={text}>
-                            Hi <strong>{userName}</strong>,
+                            {isPosition ? (
+                                <>
+                                    You secured <strong>{roleTitle}</strong> at <strong>{eventName}</strong>, organised by{" "}
+                                    {organizerName}. Outstanding work. Your certificate is ready to download.
+                                </>
+                            ) : (
+                                <>
+                                    Thank you for being part of <strong>{eventName}</strong>, organised by {organizerName}.
+                                    Your participation certificate is ready to download.
+                                </>
+                            )}
                         </Text>
 
-                        <Text style={text}>
-                            Congratulations! Your certificate of <strong>{roleDisplay}</strong> for{" "}
-                            <strong>{eventName}</strong> is now available for download.
-                        </Text>
-
-                        {/* Certificate Info Card */}
-                        <Section style={certificateCard}>
-                            <Row>
-                                <Column>
-                                    <Text style={cardLabel}>Event</Text>
-                                    <Text style={cardValue}>{eventName}</Text>
-                                </Column>
-                            </Row>
-                            <Row>
-                                <Column>
-                                    <Text style={cardLabel}>Date</Text>
-                                    <Text style={cardValue}>{eventDate}</Text>
-                                </Column>
-                                <Column>
-                                    <Text style={cardLabel}>Issued By</Text>
-                                    <Text style={cardValue}>{organizerName}</Text>
-                                </Column>
-                            </Row>
-                            <Row>
-                                <Column>
-                                    <Text style={cardLabel}>Certificate Type</Text>
-                                    <Text style={cardValue}>{roleDisplay}</Text>
-                                </Column>
-                            </Row>
-                        </Section>
-
-                        {/* Action Buttons */}
-                        <Section style={{ textAlign: "center", marginTop: "30px" }}>
+                        <Section style={buttonWrap}>
                             <Button style={primaryButton} href={downloadUrl}>
                                 Download Certificate
                             </Button>
                         </Section>
 
-                        <Section style={{ textAlign: "center", marginTop: "15px" }}>
-                            <Button style={secondaryButton} href={verifyUrl}>
-                                View Verification Page
-                            </Button>
+                        <Section style={detailsCard}>
+                            <Row>
+                                <Column style={detailCell}>
+                                    <Text style={detailLabel}>Event</Text>
+                                    <Text style={detailValue}>{eventName}</Text>
+                                </Column>
+                                <Column style={detailCell}>
+                                    <Text style={detailLabel}>Date</Text>
+                                    <Text style={detailValue}>{eventDate}</Text>
+                                </Column>
+                            </Row>
+                            <Row>
+                                <Column style={detailCell}>
+                                    <Text style={detailLabel}>{isPosition ? "Position" : "Awarded for"}</Text>
+                                    <Text style={detailValue}>{isPosition ? roleTitle : "Participation"}</Text>
+                                </Column>
+                                {certificateId && (
+                                    <Column style={detailCell}>
+                                        <Text style={detailLabel}>Certificate ID</Text>
+                                        <Text style={{ ...detailValue, fontFamily: "Menlo,Consolas,monospace" }}>{certificateId}</Text>
+                                    </Column>
+                                )}
+                            </Row>
                         </Section>
-
-                        <Hr style={hr} />
 
                         <Text style={smallText}>
-                            Your certificate contains a QR code that anyone can scan to verify its authenticity.
-                            Share it on LinkedIn or include it in your resume!
+                            The QR code on your certificate links to its verification page, so anyone can confirm it&apos;s genuine.
                         </Text>
 
-                        <Section style={{ textAlign: "center", marginTop: "20px" }}>
-                            <Link href={getLinkedInShareUrl(eventName, roleDisplay, verifyUrl)} style={linkedInLink}>
-                                🔗 Add to LinkedIn Profile
+                        <Text style={linksRow}>
+                            <Link href={verifyUrl} style={inlineLink}>Verify certificate</Link>
+                            <span style={dot}>&nbsp;&nbsp;·&nbsp;&nbsp;</span>
+                            <Link
+                                href={getLinkedInAddUrl(certificateName, organizerName, verifyUrl, certificateId, issuedAt)}
+                                style={inlineLink}
+                            >
+                                Add to LinkedIn
                             </Link>
-                        </Section>
+                        </Text>
                     </Section>
 
-                    {/* Footer */}
+                    <Hr style={hr} />
+
                     <Section style={footer}>
+                        <Text style={footerText}>Technova Technical Society · Sharda University, Greater Noida</Text>
                         <Text style={footerText}>
-                            © {new Date().getFullYear()} Technova Technical Society
-                        </Text>
-                        <Text style={footerText}>
-                            Sharda University, Greater Noida
+                            You received this because you registered for {eventName}.
                         </Text>
                     </Section>
                 </Container>
@@ -139,139 +150,159 @@ export const CertificateNotificationEmail = ({
     );
 };
 
-function getCertificateTypeLabel(type: string): string {
-    const labels: Record<string, string> = {
-        participation: "Participation",
-        winner: "Winner",
-        speaker: "Speaker",
-        coordinator: "Coordinator",
-        volunteer: "Volunteer",
-    };
-    return labels[type] || "Participation";
-}
-
-function getLinkedInShareUrl(eventName: string, role: string, verifyUrl: string): string {
-    const title = `Certificate of ${role} - ${eventName}`;
-    const text = `I'm excited to share that I received a Certificate of ${role} for ${eventName} at Technova, Sharda University! Verify it here:`;
-    return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(verifyUrl)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(text)}`;
+/** LinkedIn's "Add licence or certification" form, pre-filled. */
+function getLinkedInAddUrl(name: string, organization: string, certUrl: string, certId?: string, issuedAt?: string): string {
+    const date = issuedAt ? new Date(issuedAt) : new Date();
+    const params = new URLSearchParams({
+        startTask: "CERTIFICATION_NAME",
+        name,
+        organizationName: `${organization} – Technova, Sharda University`,
+        issueYear: String(date.getFullYear()),
+        issueMonth: String(date.getMonth() + 1),
+        certUrl,
+    });
+    if (certId) params.set("certId", certId);
+    return `https://www.linkedin.com/profile/add?${params.toString()}`;
 }
 
 export default CertificateNotificationEmail;
 
 // Styles
 const main = {
-    backgroundColor: "#f6f6f6",
-    fontFamily:
-        '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+    backgroundColor: "#f4f4f5",
+    margin: "0",
+    padding: "32px 12px",
+    fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif',
 };
 
 const container = {
+    width: "100%",
+    maxWidth: "560px",
     margin: "0 auto",
-    padding: "20px 0",
-    maxWidth: "580px",
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+    overflow: "hidden" as const,
+    border: "1px solid #e4e4e7",
 };
 
 const header = {
-    backgroundColor: "#0f0f0f",
-    padding: "30px 20px",
-    borderRadius: "8px 8px 0 0",
+    backgroundColor: "#0a0a0a",
+    padding: "12px 24px",
     textAlign: "center" as const,
 };
+
+const logo = { margin: "0 auto", display: "block" };
+
+const accentBar = (isPosition: boolean) => ({
+    height: "4px",
+    backgroundColor: isPosition ? "#b8860b" : "#7c3aed",
+});
 
 const content = {
-    backgroundColor: "#ffffff",
-    padding: "30px 40px",
-    borderRadius: "0 0 8px 8px",
+    padding: "36px 40px 8px",
 };
 
+const eyebrow = (isPosition: boolean) => ({
+    color: isPosition ? "#a16207" : "#6d28d9",
+    fontSize: "12px",
+    fontWeight: 700,
+    letterSpacing: "1.2px",
+    textTransform: "uppercase" as const,
+    margin: "0 0 8px",
+});
+
 const h1 = {
-    color: "#1a1a1a",
-    fontSize: "28px",
-    fontWeight: "bold",
-    textAlign: "center" as const,
-    marginBottom: "20px",
+    color: "#18181b",
+    fontSize: "26px",
+    lineHeight: "32px",
+    fontWeight: 700,
+    margin: "0 0 16px",
 };
 
 const text = {
-    color: "#333333",
+    color: "#3f3f46",
     fontSize: "16px",
     lineHeight: "26px",
+    margin: "0 0 28px",
 };
 
-const certificateCard = {
-    backgroundColor: "#f9f9f9",
-    borderRadius: "8px",
-    border: "1px solid #e0e0e0",
-    padding: "20px",
-    marginTop: "20px",
-};
-
-const cardLabel = {
-    color: "#666666",
-    fontSize: "12px",
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.5px",
-    marginBottom: "4px",
-};
-
-const cardValue = {
-    color: "#1a1a1a",
-    fontSize: "16px",
-    fontWeight: "bold",
-    marginBottom: "16px",
+const buttonWrap = {
+    margin: "0 0 28px",
 };
 
 const primaryButton = {
-    backgroundColor: "#7c3aed",
+    backgroundColor: "#18181b",
     borderRadius: "8px",
     color: "#ffffff",
-    fontSize: "16px",
-    fontWeight: "bold",
+    fontSize: "15px",
+    fontWeight: 600,
     textDecoration: "none",
-    textAlign: "center" as const,
     display: "inline-block",
-    padding: "14px 30px",
+    padding: "14px 28px",
 };
 
-const secondaryButton = {
-    backgroundColor: "#ffffff",
-    borderRadius: "8px",
-    border: "2px solid #7c3aed",
-    color: "#7c3aed",
-    fontSize: "14px",
-    fontWeight: "bold",
-    textDecoration: "none",
-    textAlign: "center" as const,
-    display: "inline-block",
-    padding: "10px 24px",
+const detailsCard = {
+    backgroundColor: "#fafafa",
+    border: "1px solid #e4e4e7",
+    borderRadius: "10px",
+    padding: "16px 20px 4px",
+    margin: "0 0 24px",
 };
 
-const hr = {
-    borderColor: "#e0e0e0",
-    margin: "30px 0",
+const detailCell = {
+    verticalAlign: "top" as const,
+    width: "50%",
+    paddingBottom: "12px",
+};
+
+const detailLabel = {
+    color: "#71717a",
+    fontSize: "11px",
+    fontWeight: 600,
+    letterSpacing: "0.6px",
+    textTransform: "uppercase" as const,
+    margin: "0 0 2px",
+};
+
+const detailValue = {
+    color: "#18181b",
+    fontSize: "15px",
+    fontWeight: 600,
+    margin: "0",
 };
 
 const smallText = {
-    color: "#666666",
-    fontSize: "14px",
-    lineHeight: "22px",
-    textAlign: "center" as const,
+    color: "#71717a",
+    fontSize: "13px",
+    lineHeight: "20px",
+    margin: "0 0 10px",
 };
 
-const linkedInLink = {
-    color: "#0a66c2",
+const linksRow = {
     fontSize: "14px",
-    fontWeight: "bold",
-    textDecoration: "underline",
+    margin: "0 0 28px",
+};
+
+const inlineLink = {
+    color: "#6d28d9",
+    fontWeight: 600,
+    textDecoration: "none",
+};
+
+const dot = { color: "#a1a1aa" };
+
+const hr = {
+    borderColor: "#e4e4e7",
+    margin: "0",
 };
 
 const footer = {
-    textAlign: "center" as const,
-    padding: "20px",
+    padding: "18px 40px 22px",
 };
 
 const footerText = {
-    color: "#999999",
+    color: "#a1a1aa",
     fontSize: "12px",
-    margin: "4px 0",
+    lineHeight: "18px",
+    margin: "0",
 };
