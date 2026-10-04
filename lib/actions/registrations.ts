@@ -4,7 +4,7 @@ import { googleCalendarUrl, toCalendarEntry } from "@/lib/calendar/event-calenda
 import { createClient as createServerClient } from "@supabase/supabase-js"
 import { auth } from "@/lib/auth"
 import { createOrder } from "@/lib/payments/razorpay"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { generateQRToken } from "@/lib/qr/generate"
 import { Resend } from "resend"
 import { render } from "@react-email/render"
@@ -81,6 +81,7 @@ export async function registerForEvent(eventId: string, answers?: Record<string,
             if (pendingInsertError.message?.includes('EVENT_FULL')) throw new Error("Event Full")
             throw new Error("Could not start registration. Please try again.")
         }
+        revalidateTag("event-detail", { expire: 0 }) // the held seat counts toward capacity
         return { status: 'payment_required', order }
     } else {
         // Free Event - Generate QR (for in-person events only) and Register
@@ -177,6 +178,7 @@ export async function registerForEvent(eventId: string, answers?: Record<string,
         }
 
         revalidatePath(`/events/${eventId}`)
+        revalidateTag("event-detail", { expire: 0 })
         return { status: 'success', isVirtual: event.is_virtual }
     }
 }
@@ -333,4 +335,30 @@ export async function cancelRegistration(registrationId: string) {
 
     revalidatePath("/events")
     revalidatePath("/admin/events")
+    revalidateTag("event-detail", { expire: 0 })
+}
+
+/**
+ * Reopen checkout for a registration whose payment didn't go through.
+ * Reuses the registration's existing Razorpay order (unpaid orders stay payable),
+ * so a late payment on the original order still matches this registration.
+ */
+export async function resumePayment(eventId: string): Promise<{ order: { id: string; amount: number; currency: string } }> {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const supabase = await getSupabase()
+    const { data: reg } = await supabase
+        .from('registrations')
+        .select('id, payment_status, qr_token_id')
+        .eq('user_id', session.user.id)
+        .eq('event_id', eventId)
+        .maybeSingle()
+    if (!reg || reg.payment_status !== 'pending' || !reg.qr_token_id) throw new Error("There's no pending payment for this event")
+
+    const { data: event } = await supabase.from('events').select('price, end_time').eq('id', eventId).single()
+    if (!event || !(Number(event.price) > 0)) throw new Error("This event doesn't need payment")
+    if (event.end_time && new Date(event.end_time).getTime() < Date.now()) throw new Error("This event has already ended")
+
+    return { order: { id: reg.qr_token_id, amount: Math.round(Number(event.price) * 100), currency: "INR" } }
 }

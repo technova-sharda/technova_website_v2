@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { registerForEvent, cancelRegistration } from "@/lib/actions/registrations"
+import { registerForEvent, cancelRegistration, resumePayment } from "@/lib/actions/registrations"
 import { useRouter } from "next/navigation"
 import { Download, XCircle, Loader2 } from "lucide-react"
 import { RegistrationModal } from "./registration-modal"
@@ -168,6 +168,53 @@ export function EventRegistrationCard({
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+    }
+
+    const openCheckout = (order: { id: string; amount: number; currency: string }) => {
+        const rzp = new window.Razorpay({
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder",
+            amount: order.amount,
+            currency: order.currency,
+            name: "Technova",
+            description: event.title,
+            order_id: order.id,
+            handler: function () {
+                showToast("Payment successful! Your ticket is on its way by email", 'success')
+                router.refresh()
+            },
+            prefill: { name: user?.name || '', email: user?.email || '' },
+            theme: { color: "#2563EB" },
+        })
+        rzp.open()
+    }
+
+    const handleResumePayment = async () => {
+        setLoading(true)
+        try {
+            const { order } = await resumePayment(event.id)
+            openCheckout(order)
+        } catch (err: unknown) {
+            showToast((err as Error).message, 'error')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (existingRegistration && existingRegistration.payment_status === 'pending') {
+        return (
+            <div className="w-full md:w-80 bg-amber-50 p-6 rounded-xl border border-amber-200">
+                <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
+                <p className="text-amber-800 font-bold text-lg text-center">Payment pending</p>
+                <p className="text-amber-700 text-sm text-center mt-1">Your seat is held, but the payment didn&apos;t complete. Finish it to get your ticket.</p>
+                <button
+                    onClick={handleResumePayment}
+                    disabled={loading}
+                    className="mt-4 w-full py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                >
+                    {loading ? "Opening payment..." : `Complete payment (₹${event.price})`}
+                </button>
+            </div>
+        )
     }
 
     if (existingRegistration) {

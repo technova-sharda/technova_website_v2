@@ -7,6 +7,7 @@ import { revalidatePath, revalidateTag } from "next/cache"
 import { generateEventSlug } from "@/lib/utils/slugify"
 import { parseDateTimeLocal } from "@/lib/utils"
 import { prepareImageUpload, IMMUTABLE_CACHE_CONTROL } from "@/lib/images/optimize"
+import { getCachedEventDetail } from "@/lib/data/event-detail-cache"
 
 // Helper to get authenticated client or admin client
 async function getSupabase() {
@@ -469,59 +470,23 @@ export async function getEventById(id: string) {
  * Tries slug first, then falls back to UUID lookup
  */
 export async function getEventBySlugOrId(slugOrId: string) {
+    // Shared event data comes from a 30-second cache; only the meeting-link check is per student.
+    const cached = await getCachedEventDetail(slugOrId)
+    if (!cached) return null
+    const { event, registeredCount, poc } = cached
+
     const supabase = await getSupabase()
-
-    // Try slug first
-    let { data: event, error } = await supabase.from('events')
-        .select(`
-            *,
-            club:clubs!events_club_id_fkey(name, logo_url)
-        `)
-        .eq('slug', slugOrId)
-        .single()
-
-    // If not found by slug, try by ID (backwards compatibility)
-    if (error || !event) {
-        const { data: eventById, error: errorById } = await supabase.from('events')
-            .select(`
-                *,
-                club:clubs!events_club_id_fkey(name, logo_url)
-            `)
-            .eq('id', slugOrId)
-            .single()
-
-        if (errorById || !eventById) return null
-        event = eventById
-    }
-
-    // Count, POC and meeting-link check don't depend on each other: run them together.
-    const [{ count }, pocDetails, meeting_link] = await Promise.all([
-        supabase
-            .from('registrations')
-            .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id),
-        // POC details, if the event names one
-        event.poc_name && event.club_id
-            ? supabase
-                .from('club_members')
-                .select('email, phone, role')
-                .eq('club_id', event.club_id)
-                .eq('name', event.poc_name)
-                .single()
-                .then(({ data }) => data ?? null)
-            : Promise.resolve(null),
-        event.meeting_link
-            ? canSeeMeetingLink(supabase, event.id).then(ok => (ok ? event.meeting_link : null))
-            : Promise.resolve(null),
-    ])
+    const meeting_link = event.meeting_link && await canSeeMeetingLink(supabase, event.id)
+        ? event.meeting_link
+        : null
 
     return {
         ...event,
         meeting_link,
-        registered_count: count || 0,
-        poc_email: pocDetails?.email || null,
-        poc_phone: pocDetails?.phone || null,
-        poc_role: pocDetails?.role || null
+        registered_count: registeredCount,
+        poc_email: poc?.email || null,
+        poc_phone: poc?.phone || null,
+        poc_role: poc?.role || null
     }
 }
 

@@ -5,6 +5,8 @@ import { Users, User, Shield, Target, Calendar, ArrowRight, Github, Globe, Linke
 import { getMemberPhotoPath } from "@/lib/constants/team-photos"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { BannerImage } from "@/components/ui/banner-image"
+import { TeamPhoto } from "@/components/ui/team-photo"
 
 const ensureAbsoluteUrl = (url: string) => {
     if (!url) return "#"
@@ -326,8 +328,7 @@ function PastEventsSection({ pastEvents, theme }: { pastEvents: any[]; theme: ty
                                         </div>
                                     )}
                                     {event.banner ? (
-                                        /* eslint-disable-next-line @next/next/no-img-element */
-                                        <img loading="lazy" decoding="async" src={event.banner} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <BannerImage src={event.banner} alt={event.title} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                                     ) : (
                                         <div className={`w-full h-full bg-gradient-to-br ${colors.gradient} flex items-center justify-center`}>
                                             <Calendar className={`w-12 h-12 ${colors.text} opacity-50`} />
@@ -551,7 +552,7 @@ export function ClubDetailsClient({ slug, clubData, pastEvents }: {
                                 />
                                 <div className="relative w-56 h-56 rounded-full bg-white shadow-2xl flex items-center justify-center p-8 border-4 border-white/30">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={club.logo} alt={club.name} className="w-40 h-40 object-contain" />
+                                    <span className="relative block w-40 h-40"><TeamPhoto src={club.logo} name={club.name} sizes="160px" className="object-contain" priority /></span>
                                 </div>
                             </div>
 
@@ -649,14 +650,7 @@ export function ClubDetailsClient({ slug, clubData, pastEvents }: {
                                     {/* Large Photo with Club Color Background */}
                                     <div className={`w-32 h-32 ${colors.bg} ${colors.text} backdrop-blur-xl rounded-2xl flex items-center justify-center text-current group-hover:scale-110 transition-transform duration-500 overflow-hidden relative border border-white/10`}>
                                         {/* Always use image - either photo or ui-avatars for consistency */}
-                                        <img loading="lazy" decoding="async"
-                                            src={member.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random&size=128`}
-                                            alt={member.name}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random&size=128`
-                                            }}
-                                        />
+                                        <TeamPhoto src={member.photo} name={member.name} sizes="128px" />
                                     </div>
 
                                     {/* Social Links - Appear on Hover */}

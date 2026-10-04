@@ -95,11 +95,31 @@
 - [x] **H5** One-off scripts (incl. destructive `delete-user.mjs`, `clear-students.js`, `reset-db.js`) moved to `scripts/one-off/` with a warning README.
 - [x] Lint: the 31 unescaped-quote errors are fixed (48 → 17 errors).
 
-### Partly fixed (4)
-- [~] **R3** Unpaid registrations can't check in, and no payment order is created without a registration. Still missing: the ticket after payment, and retrying a failed payment. *(No paid events exist yet.)*
-- [~] **P1** Each route has its own rate-limit counter, but the limits are in memory (no Redis). Fine at current traffic.
-- [~] **P8** `select('*')` removed where it mattered; still used in admin-only places.
-- [~] **H3** Debug logs with user IDs removed from the referral and registration paths.
+### 🚀 Latency: fixed 4 Oct, late night (7)
+- [x] **L1** **The live site ran in Washington DC while the database is in Mumbai** (`x-vercel-id: bom1::iad1`), so every query crossed the world (~200+ ms each). `vercel.json` now pins functions to `bom1` (Mumbai). Takes effect on the next deploy.
+- [x] **L2** Public pages are pre-built and served from the CDN (Home, Events, Clubs, every club page, Leadership, Partners; refreshed every 1–5 min). The navbar reads the login state in the browser instead of on the server. Local production test: **3–5 ms** per page (was ~20 ms locally, ~440 ms live).
+- [x] **L3** Page-to-page clicks are prefetched: **15–75 ms** in the production test.
+- [x] **L4** `auth()` now reads the session once per request (layout, page and actions used to each hit the database), and the proxy only runs on routes that need its redirects.
+- [x] **L5** Event page: shared data (event, seat count, contact) is cached for 30 s and cleared on every registration/cancel/edit: **400 ms → 19 ms**.
+- [x] **L6** Team photos and club logos use Next's image optimiser (right size per screen, AVIF/WebP).
+- [x] **L7** Ask Technova: reasoning off for tool picking (2–2.5× faster, same answers: 1.3 s / 4.3 s instead of 3.3 s / 9 s), and the data + model connection are warmed when the page opens or its link is hovered.
+- [x] **U19** Browser-tab icon showed the logo on a white square; it now uses the transparent blue logo.
+- [x] **L8** Signed-out visits to admin/dashboard pages ran the page's queries before the layout redirected (1.1 s); the proxy now redirects them in ~3 ms (back to the same page after login), and the dashboard pages guard themselves.
+- [x] **S11** `npm audit`: the 4 critical advisories (`next`, `next-auth`, `@auth/core`, `@auth/supabase-adapter`) fixed with patch-level updates (next 16.3.8, next-auth beta.32). 7 high remain, all needing major upgrades (tailwind 4, sharp 0.35) or with no fix (`xlsx`, admin exports only).
+
+### 🧹 Minor issues: fixed 4 Oct, night (8)
+- [x] **P4** **Images were 131 MB.** Every photo/logo in `public/` was resized to its display size ×2 (same names and formats): 122.5 MB → 15.4 MB, and the navbar logo dropped from 961 KB to about 60 KB. Event banners now go through Next's image optimiser (AVIF/WebP, right size per screen, cached a month).
+- [x] **U18** 5 team photos were iPhone HEIC files renamed to `.png`; Chrome can't show HEIC, so they were broken for most visitors. Converted to real PNGs.
+- [x] **R3** Paid events: the QR ticket is now emailed when Razorpay confirms the payment (only once, even when Razorpay retries), and a failed payment shows "Complete payment", which reopens the same order.
+- [x] **H6** `hackathon.ts` no longer exports its service-role client from a "use server" file (exports there are callable from the browser). Six callers now use the shared server-only admin client.
+- [x] **H3** Logs no longer print student emails, participant lists or user IDs.
+- [x] **C5** Certificate PDFs are cached in the student's browser for 15 minutes, so repeat clicks don't regenerate them.
+- [x] **H7** Tests: Vitest with 14 tests (IST dates, calendar files, attendance matching, XP split, analytics months). Run `npm test`.
+- [x] **D3 (code side)** `CRON_SECRET` is set in `.env`; a free GitHub Actions workflow (`.github/workflows/event-reminders.yml`) calls the reminder job every 30 minutes once the secret is added to GitHub.
+
+### Partly fixed (2)
+- [~] **P1** Each route has its own rate-limit counter, but the limits are in memory. A shared limit needs Redis (e.g. Upstash); fine at current traffic.
+- [~] **P8** `select('*')` removed where it mattered; still used in a few admin-only places.
 
 ### ✋ Not a bug / by design (3)
 - [x] **S8** Club member / executive emails and phone numbers are public **on purpose**, so students can contact them.
@@ -116,19 +136,16 @@ File: `supabase/migrations/20261004_db_fixes.sql`. Rollback: `supabase/rollbacks
 ### ❓ Needs your decision (data rewrite)
 - [ ] **D10** 413 users' XP totals don't match their check-in/award history. Some XP sources (referrals, bug reports) never wrote history rows, so "fixing" totals from history could take XP away from students. Not touched.
 
-### 👤 Needs your decision (3)
-- [ ] **C1** Deploy (after AI KickStart ends tonight, 11 PM IST).
-- [ ] **D3** Event reminder emails have never been sent: there's no cron. Needs `CRON_SECRET` plus a schedule (a Vercel cron on Pro, or a free external cron every 30 min). This emails real students automatically, so it's your call.
+### 👤 Needs your action (3)
+- [ ] **C1** Deploy (outside KickStart hours, 8–11 PM IST). Add `CRON_SECRET` and `NAPI_KEY` to Vercel → Settings → Environment Variables first.
+- [ ] **D3** Turn on reminders: add `CRON_SECRET` as a GitHub repository secret (same value as in `.env`/Vercel). From then on, registered students get an email ~3 hours before each event.
 - [ ] `ko.png` in the team photos is unused.
 
-### 🔒 Low priority: security (per your call) (2)
-- [ ] **H6** Each action file creates its own service-role client.
+### 🔒 Low priority: security (per your call) (1)
 - [ ] Kiosk email one-time code.
 
-### 🔜 Still to do: features and clean-up (4)
-- [ ] **C5** Cache generated certificate PDFs
+### 🔜 Still to do: clean-up (2)
 - [ ] **H4** `@ts-ignore` / `as any` clean-up
-- [ ] **H7** Tests and error monitoring
 - [ ] 17 lint errors, none of them runtime bugs: 12 "setState in effect" (`mounted` patterns that drive animations, fetch-then-set), 4 in the QR scanner pages (left alone so live scanning isn't put at risk), 1 memoization notice.
 
 ---

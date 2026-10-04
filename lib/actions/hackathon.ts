@@ -10,7 +10,8 @@ import { headers } from "next/headers"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { fetchAllRows } from "@/lib/supabase/fetch-all"
 
-export async function getSupabase() {
+// Not exported: exports of a "use server" file are callable from the browser.
+async function getSupabase() {
     return createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!

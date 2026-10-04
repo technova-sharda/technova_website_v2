@@ -11,6 +11,8 @@ import { ClubsCarousel } from "@/components/ui/clubs-carousel"
 import { AnimatedBackground } from "@/components/ui/animated-background"
 import { Footer } from "@/components/layout/footer"
 import { ParticleConstellation } from "./particle-constellation"
+import { useSessionUser } from "@/components/auth/use-session-user"
+import { BannerImage } from "@/components/ui/banner-image"
 import {
     EASE_OUT, MagneticLink, Marquee, Reveal, ScrollProgress, ScrubText, SectionHeading, SplitWords, TiltCard,
 } from "./motion-primitives"
@@ -61,16 +63,25 @@ function TextCycle({ words }: { words: string[] }) {
 }
 
 function HeroTitle() {
-    // One calm rise for the whole word (CSS, so it shows as soon as the page paints).
-    return (
-        <h1
-            aria-label="Technova"
-            className="hero-rise text-[clamp(2.9rem,12.5vw,11rem)] font-heading font-extrabold tracking-[-0.055em] leading-[0.85] uppercase whitespace-nowrap"
-            style={{ animationDelay: "80ms" }}
+    const letters = "TECHNOVA.".split("")
+    const isAmber = (i: number) => i >= letters.length - 2
+    // Same per-letter boxes in both layers, so the sheen lines up with the letters exactly.
+    const row = (animated: boolean) => letters.map((ch, i) => (
+        <span
+            key={i}
+            className={animated ? `letter-rise ${isAmber(i) ? "text-[var(--sig-amber)]" : ""}` : "inline-block"}
+            style={animated ? { animationDelay: `${80 + i * 45}ms` } : undefined}
         >
-            <span aria-hidden>TECHNOV</span>
-            <span aria-hidden className="text-[var(--sig-amber)]">A</span>
-            <span aria-hidden className="hero-fade text-[var(--sig-amber)]" style={{ animationDelay: "650ms" }}>.</span>
+            {ch}
+        </span>
+    ))
+    return (
+        <h1 aria-label="Technova" className="relative text-[clamp(2.9rem,12.5vw,11rem)] font-heading font-extrabold tracking-[-0.055em] leading-[0.85] uppercase whitespace-nowrap">
+            {/* breathing amber light behind "A." */}
+            <span aria-hidden className="amber-breathe pointer-events-none absolute right-[-4%] top-1/2 -translate-y-1/2 w-[2.2em] h-[1.6em] rounded-full bg-[radial-gradient(closest-side,rgba(245,166,35,0.35),transparent)] blur-2xl" />
+            <span aria-hidden className="relative">{row(true)}</span>
+            {/* light band that sweeps across the word */}
+            <span aria-hidden className="title-sheen pointer-events-none absolute inset-0">{row(false)}</span>
         </h1>
     )
 }
@@ -167,7 +178,7 @@ function MarqueeBand() {
         <section aria-label="What we work on" className="relative py-10 md:py-14 border-y border-[var(--sig-border)] bg-[var(--sig-surface)]/40 overflow-hidden">
             <Marquee speed={45}>
                 {TOPICS.map(t => (
-                    <span key={t} className="flex items-center gap-10 text-4xl md:text-6xl font-heading font-black uppercase tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(250,250,249,0.32)] hover:[-webkit-text-stroke:1px_var(--sig-amber)] transition-all whitespace-nowrap">
+                    <span key={t} className="flex items-center gap-10 text-4xl md:text-6xl font-heading font-black uppercase tracking-tight text-white/[0.14] hover:text-[var(--sig-amber)] transition-colors duration-300 whitespace-nowrap">
                         {t}
                         <Sparkle className="w-6 h-6 md:w-8 md:h-8 text-[var(--sig-amber)] shrink-0" strokeWidth={1.5} />
                     </span>
@@ -218,8 +229,7 @@ function UpNext({ events }: { events: LandingEvent[] }) {
                                 <Link href={`/events/${e.slug || e.id}`} className="group block h-full rounded-2xl overflow-hidden border border-[var(--sig-border)] bg-[var(--sig-surface)]">
                                     <div className="relative aspect-[16/9] overflow-hidden bg-black">
                                         {e.banner ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={e.banner} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110" />
+                                            <BannerImage src={e.banner} alt="" sizes="(min-width: 768px) 33vw, 100vw" className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110" />
                                         ) : (
                                             <div className="w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(245,166,35,0.25),transparent_60%),radial-gradient(circle_at_80%_80%,rgba(99,102,241,0.25),transparent_60%)]" />
                                         )}
@@ -277,7 +287,7 @@ function VisionMission() {
                         <div key={it.n} className={`relative ${i === 1 ? "md:pt-28" : ""}`}>
                             <motion.span
                                 aria-hidden
-                                className="absolute -top-10 -left-2 text-[7rem] md:text-[9rem] font-heading font-black leading-none text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.07)] select-none"
+                                className="absolute -top-10 -left-2 text-[7rem] md:text-[9rem] font-heading font-black leading-none text-white/[0.035] select-none"
                                 initial={{ opacity: 0, y: 40 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
@@ -467,7 +477,8 @@ function DevSpaceAndCalendar() {
 // ─────────────────────────────────────────────────────────────
 // Closing call to action
 // ─────────────────────────────────────────────────────────────
-function FinalCta({ isSignedIn }: { isSignedIn: boolean }) {
+function FinalCta() {
+    const isSignedIn = !!useSessionUser()
     return (
         <section className="relative py-20 md:py-32 overflow-hidden border-t border-[var(--sig-border)]">
             {/* still glow (a rotating blurred layer here cost frames on phones) */}
@@ -515,7 +526,7 @@ function FinalCta({ isSignedIn }: { isSignedIn: boolean }) {
 // ─────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────
-export function LandingClient({ stats, events, isSignedIn }: { stats: LandingStat[]; events: LandingEvent[]; isSignedIn: boolean }) {
+export function LandingClient({ stats, events }: { stats: LandingStat[]; events: LandingEvent[] }) {
     return (
         <MotionConfig reducedMotion="user">
             <div className="relative flex flex-col min-h-screen bg-[var(--sig-bg)] text-[var(--sig-text)] selection:bg-[var(--sig-amber)] selection:text-black overflow-x-clip font-sans">
@@ -528,7 +539,7 @@ export function LandingClient({ stats, events, isSignedIn }: { stats: LandingSta
                 <WhyJoin />
                 <Clubs />
                 <DevSpaceAndCalendar />
-                <FinalCta isSignedIn={isSignedIn} />
+                <FinalCta />
                 <Footer />
             </div>
         </MotionConfig>

@@ -7,6 +7,9 @@ export const metadata: Metadata = {
     description: "Meet the faculty mentors and student executives who lead Technova at Sharda University.",
 }
 
+// Pre-built and served from the CDN; rebuilt in the background at most once a minute.
+export const revalidate = 60
+
 export default async function LeadershipPage() {
     const members = await getCachedClubMembersByName("Technova Executives")
     return <LeadershipClient members={members} />

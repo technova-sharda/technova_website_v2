@@ -65,8 +65,38 @@ export default auth((req) => {
     if (!isLoggedIn && pathname === '/onboarding') {
         return NextResponse.redirect(new URL('/login', req.nextUrl))
     }
+
+    // Signed-out visitors to signed-in areas go straight to login. Without this the
+    // page renders alongside its layout and runs its queries before the layout redirects.
+    const signedInArea = ['/admin', '/dashboard', '/profile', '/leaderboard'].some(p => pathname === p || pathname.startsWith(`${p}/`))
+    if (!isLoggedIn && signedInArea) {
+        const login = new URL('/login', req.nextUrl)
+        login.searchParams.set('callbackUrl', pathname)
+        return NextResponse.redirect(login)
+    }
 })
 
+// Sessions are stored in the database, so this proxy costs a Supabase round trip on
+// every request it runs for. It only runs where its redirects matter (login,
+// onboarding, signed-in areas, event registration pages); the public marketing
+// pages (/, /events list, /clubs, /leadership, /partners, /hackathon, /verify) skip it
+// so they can be served straight from the CDN.
 export const config = {
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|assets).*)", "/api/user/:path*"],
+    matcher: [
+        "/login",
+        "/onboarding",
+        "/dashboard/:path*",
+        "/profile/:path*",
+        "/leaderboard",
+        "/user/:path*",
+        "/events/:id",
+        "/community/:path*",
+        "/showcase/:path*",
+        "/buddy-finder",
+        "/resources",
+        "/forms/:path*",
+        "/admin/:path*",
+        "/scan",
+        "/api/user/:path*",
+    ],
 }

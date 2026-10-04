@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server"
 import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit"
-import { getSupabase } from "@/lib/actions/hackathon"
+import { createAdminClient } from "@/lib/supabase/server"
 
 export const revalidate = 30
 
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
 
-    const supabase = await getSupabase()
+    const supabase = createAdminClient()
 
     const { data: teams, error } = await supabase
         .from('hackathon_teams')

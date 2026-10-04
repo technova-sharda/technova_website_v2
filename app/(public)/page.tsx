@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth"
 import { getCachedPublicEvents, getCachedSiteStats } from "@/lib/data/public-cache"
 import { LandingClient, type LandingEvent, type LandingStat } from "@/components/landing/landing-client"
 
@@ -28,11 +27,13 @@ function roundDown(n: number) {
     return n
 }
 
+// Pre-built and served from the CDN; rebuilt in the background at most once a minute.
+export const revalidate = 60
+
 export default async function LandingPage() {
-    const [stats, events, session] = await Promise.all([
+    const [stats, events] = await Promise.all([
         getCachedSiteStats().catch(() => null),
         getCachedPublicEvents().catch(() => [] as any[]),
-        auth(),
     ])
 
     const statCards: LandingStat[] = stats
@@ -51,5 +52,5 @@ export default async function LandingPage() {
 
     const upNext = pickLandingEvents(events)
 
-    return <LandingClient stats={statCards} events={upNext} isSignedIn={!!session?.user} />
+    return <LandingClient stats={statCards} events={upNext} />
 }

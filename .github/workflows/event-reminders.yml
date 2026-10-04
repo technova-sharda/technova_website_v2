@@ -1,0 +1,30 @@
+# Sends event reminder emails ~3 hours before each event (free alternative to a
+# Vercel Pro cron). Does nothing until the repository secret CRON_SECRET is set:
+# GitHub → Settings → Secrets and variables → Actions → New repository secret,
+# with the same value as CRON_SECRET in the Vercel project.
+name: Event reminders
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # every 30 minutes (UTC)
+  workflow_dispatch: {}
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call reminder endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://www.technovashardauniversity.in' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET is not set; skipping."
+            exit 0
+          fi
+          status=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/event-reminders")
+          cat response.json; echo
+          test "$status" = "200"

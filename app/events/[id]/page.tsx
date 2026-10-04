@@ -13,6 +13,7 @@ import { notFound } from "next/navigation"
 import { generateQRToken } from "@/lib/qr/generate"
 import { createClient } from "@supabase/supabase-js"
 import { formatDate, formatDateRange, formatTime } from "@/lib/utils"
+import { BannerImage } from "@/components/ui/banner-image"
 
 // Map club names to URL slugs
 const CLUB_NAME_TO_SLUG: Record<string, string> = {
@@ -88,10 +89,12 @@ export default async function EventPage({
             <div className="h-64 md:h-96 w-full bg-gray-900 relative">
                 <div className="absolute inset-0 flex items-center justify-center text-gray-700">
                     {event.banner ? (
-                        <img
+                        <BannerImage
                             src={event.banner}
                             alt={event.title}
-                            className="w-full h-full object-cover opacity-80"
+                            sizes="100vw"
+                            priority
+                            className="object-cover opacity-80"
                             style={{ objectPosition: event.banner_position || 'center' }}
                         />
                     ) : "No Banner"}

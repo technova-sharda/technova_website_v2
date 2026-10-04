@@ -7,6 +7,7 @@ import { useMemo, useState } from "react"
 import { formatDateShort, formatDateRange } from "@/lib/utils"
 import { AnimatedBackground } from "@/components/ui/animated-background"
 import { RevealOnScroll, StaggerContainer, StaggerItem } from "@/components/ui/reveal-on-scroll"
+import { BannerImage } from "@/components/ui/banner-image"
 
 
 type Mode = 'all' | 'online' | 'campus'
@@ -315,11 +316,11 @@ function EventCard({ event, isOngoing }: { event: any; isOngoing?: boolean }) {
                 {/* Banner */}
                 <div className="h-44 bg-gradient-to-br from-[var(--sig-amber)]/10 to-[var(--sig-indigo)]/10 flex items-center justify-center overflow-hidden relative">
                     {event.banner ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img loading="lazy" decoding="async"
+                        <BannerImage
                             src={event.banner}
                             alt={event.title}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                            className="object-cover transition-transform duration-700 group-hover:scale-110"
                             style={{ objectPosition: event.banner_position || 'center' }}
                         />
                     ) : (

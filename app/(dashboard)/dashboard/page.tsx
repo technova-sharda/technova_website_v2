@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import { ArrowRight, Award, Calendar, CalendarPlus, CheckCircle2, MapPin, Ticket, Trophy, Video, Zap } from "lucide-react"
 import { getMyEvents, splitMyEvents, type MyEvent } from "@/lib/data/student-dashboard"
@@ -6,6 +7,7 @@ import { getUserRank } from "@/lib/actions/leaderboard"
 import { getCachedPublicEvents } from "@/lib/data/public-cache"
 import { googleCalendarUrl, toCalendarEntry } from "@/lib/calendar/event-calendar"
 import { formatDateShort, formatTime } from "@/lib/utils"
+import { BannerImage } from "@/components/ui/banner-image"
 
 export const metadata = { title: "Dashboard" }
 
@@ -32,7 +34,9 @@ function StatCard({ icon: Icon, label, value, hint, accent }: { icon: any; label
 
 export default async function DashboardPage() {
     const session = await auth()
-    const userId = session!.user.id // the dashboard layout redirects visitors who aren't signed in
+    // Layout and page render in parallel, so the page needs its own guard (the layout's redirect isn't enough)
+    if (!session?.user?.id) redirect("/login")
+    const userId = session.user.id
 
     const [myEvents, rank, publicEvents] = await Promise.all([
         getMyEvents(userId),
@@ -122,8 +126,9 @@ export default async function DashboardPage() {
                                 <li key={e.id}>
                                     <Link href={`/events/${e.slug || e.id}`} className="flex items-center gap-3 p-3 rounded-xl bg-black/40 border border-white/5 hover:border-blue-500/30 transition-colors">
                                         {e.banner ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={e.banner} alt="" loading="lazy" decoding="async" className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                                            <span className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                                                <BannerImage src={e.banner} alt="" sizes="64px" className="object-cover" />
+                                            </span>
                                         ) : (
                                             <div className="w-16 h-16 rounded-lg bg-white/5 shrink-0" />
                                         )}

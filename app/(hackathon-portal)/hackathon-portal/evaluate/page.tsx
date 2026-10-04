@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { checkHackathonRole, checkEvaluatorAccess, getHackathonSettings, getTeamsForEvaluation, getSupabase } from "@/lib/actions/hackathon"
+import { checkHackathonRole, checkEvaluatorAccess, getHackathonSettings, getTeamsForEvaluation } from "@/lib/actions/hackathon"
+import { createAdminClient } from "@/lib/supabase/server"
 import PortalEvaluatorClient from "./client"
 import { ShieldAlert, ClipboardCheck } from "lucide-react"
 import Link from "next/link"
@@ -8,7 +9,7 @@ import Link from "next/link"
 export const dynamic = "force-dynamic";
 
 async function getEvaluatorByToken(token: string) {
-    const supabase = await getSupabase()
+    const supabase = createAdminClient()
     const { data } = await supabase
         .from('hackathon_evaluators')
         .select('id, name, email')

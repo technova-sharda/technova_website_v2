@@ -49,7 +49,12 @@ You set two rules on 4 Oct: **students come first** (speed, phones, usefulness),
 - [x] **F7** Bulk attendance: `/admin/events/[id]/attendance`. Upload a Meet/Zoom CSV or paste a list (matched by email or system ID, never by name), preview, then mark. Per day for multi-day events, same XP as a QR scan, no double awards.
 - [x] **F8** People search: `/admin/people`.
 - [x] **Admin Roles** page (`/admin/roles`, super admins only): make anyone Super Admin / Admin (scanner) / Student, with confirmation, no self-change, never zero super admins, and a change history.
-- [ ] F9 Event report PDF · F10 Certificates hub · F11 Analytics · F12 Ask Technova · F13 Feedback summaries
+- [x] **F9** Event report PDF: "Event Report" on each event's admin page (and in Analytics). Branded A4: KPIs, registrations over time, audience by year/course, ratings, and an AI-written summary from the totals.
+- [x] **F10** Certificates hub: `/admin/certificates`. Totals, per-event status (valid / not emailed / pending / revoked / downloads), search by certificate ID or student, and past events still missing certificates or attendance.
+- [x] **F11** Analytics: `/admin/analytics`. KPIs, monthly activity, year and course mix, clubs compared, ratings, repeat participation, XP spread, and a sortable table of every event. Built on one anonymous dataset (`lib/analytics/`).
+- [x] **F12** Ask Technova: `/admin/insights` (super admins). NVIDIA Nemotron 3 Super with a fallback model. **No SQL and no database access for the AI:** it calls 8 fixed read-only tools over the anonymous dataset, and charts are filled from tool results on the server. 40 questions/hour per admin.
+- [x] **F13** Feedback summaries: "Summarise comments" in each event's feedback section. Only long-answer comments are sent (emails/numbers redacted), grouped into praise, complaints and suggestions.
+- [ ] Offline ticket in the installed app (needs a service worker; left out on purpose).
 
 ---
 

@@ -8,6 +8,7 @@ import { AnimatedBackground } from "@/components/ui/animated-background"
 import Link from "next/link"
 import { Home, ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
+import { TeamPhoto } from "@/components/ui/team-photo"
 
 const MENTORS = [
     {
@@ -225,14 +226,7 @@ export function LeadershipClient({ members }: { members: any[] }) {
                                             <div className="relative shrink-0 group-hover:scale-[1.02] transition-transform duration-700 ease-[var(--ease-out)]">
                                                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--sig-amber)] to-[var(--sig-indigo)] blur-2xl opacity-30 rounded-[2.5rem]" />
                                                 <div className="w-64 h-64 md:w-80 md:h-80 bg-[var(--sig-surface)] rounded-[2.5rem] overflow-hidden border border-[var(--sig-border-hover)] shadow-2xl relative z-10">
-                                                    <img
-                                                        src={mentor.imagePath}
-                                                        alt={mentor.name}
-                                                        className="w-full h-full object-cover object-top"
-                                                        onError={(e) => {
-                                                            e.currentTarget.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(mentor.name) + "&background=random"
-                                                        }}
-                                                    />
+                                                    <TeamPhoto src={mentor.imagePath} name={mentor.name} sizes="(min-width: 768px) 320px, 256px" className="object-cover object-top" priority={index === 0} />
                                                 </div>
 
                                                 {/* Decorative */}
@@ -312,15 +306,7 @@ export function LeadershipClient({ members }: { members: any[] }) {
                                     <div className={`w-32 h-32 ${member.bg} ${member.color} backdrop-blur-xl rounded-2xl flex items-center justify-center text-current group-hover:scale-110 transition-transform duration-500 overflow-hidden relative border border-[var(--sig-border)]`}>
                                         {/* @ts-ignore */}
                                         {member.imagePath ? (
-                                            <img loading="lazy" decoding="async"
-                                                // @ts-ignore
-                                                src={member.imagePath}
-                                                alt={member.name}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    e.currentTarget.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(member.name) + "&background=random"
-                                                }}
-                                            />
+                                            <TeamPhoto src={member.imagePath} name={member.name} sizes="128px" />
                                         ) : (
                                             <member.icon className="w-12 h-12" />
                                         )}

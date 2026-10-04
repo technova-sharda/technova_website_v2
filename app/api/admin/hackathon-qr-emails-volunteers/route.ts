@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
 
                 // Resend reports failures in the result instead of throwing
                 if (result.error) throw new Error(result.error.message)
-                console.log(`[Volunteer QR Email] Sent to ${recipientEmail} for Volunteer "${volunteer.name}". Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
+                console.log(`[Volunteer QR Email] Sent for Volunteer "${volunteer.name}". Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
 
                 // Mark volunteer as emailed
                 await supabase.from('hackathon_volunteers').update({ qr_emailed: true }).eq('id', volunteer.id)
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
                     await delay(2000)
                 } else {
                     const errMsg = err?.message || err?.statusCode || 'unknown error'
-                    console.error(`[Volunteer QR Email] Failed: ${recipientEmail} for Volunteer "${volunteer.name}":`, errMsg)
+                    console.error(`[Volunteer QR Email] Failed for Volunteer "${volunteer.name}":`, errMsg)
                     failed++
                     errors.push(`Volunteer "${volunteer.name}" (${recipientEmail}): ${errMsg}`)
                     break

@@ -2,7 +2,15 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, BarChart, Settings, Home, BookOpen, Rocket, FileText, ShieldCheck, UserRound } from "lucide-react"
+import { Calendar, BarChart, Settings, Home, BookOpen, Rocket, FileText, ShieldCheck, UserRound, BarChart3, Sparkles, Award } from "lucide-react"
+
+let insightsWarmed = false
+/** Start warming Ask Technova as soon as the admin points at the link. */
+function warmInsights() {
+    if (insightsWarmed) return
+    insightsWarmed = true
+    fetch("/api/admin/insights/warm", { method: "POST" }).catch(() => { insightsWarmed = false })
+}
 
 export function SidebarNav() {
     const pathname = usePathname()
@@ -61,6 +69,52 @@ export function SidebarNav() {
             </Link>
 
             <Link
+                href="/hackathon-portal"
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/hackathon-portal')
+                    ? 'bg-emerald-600/20 text-emerald-400 font-medium border border-emerald-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+            >
+                <Rocket className="w-5 h-5 text-emerald-500" /> Hackathon Portal
+            </Link>
+
+            <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Insights</div>
+
+            <Link
+                href="/admin/analytics"
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/analytics')
+                    ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+            >
+                <BarChart3 className="w-5 h-5" /> Analytics
+            </Link>
+
+            <Link
+                href="/admin/insights"
+                onMouseEnter={warmInsights}
+                onFocus={warmInsights}
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/insights')
+                    ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+            >
+                <Sparkles className="w-5 h-5" /> Ask Technova
+            </Link>
+
+            <Link
+                href="/admin/certificates"
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/certificates')
+                    ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+            >
+                <Award className="w-5 h-5" /> Certificates
+            </Link>
+
+            <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">People</div>
+
+            <Link
                 href="/admin/people"
                 className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/people')
                     ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
@@ -70,15 +124,6 @@ export function SidebarNav() {
                 <UserRound className="w-5 h-5" /> People
             </Link>
 
-            <Link
-                href="/hackathon-portal"
-                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/hackathon-portal')
-                    ? 'bg-emerald-600/20 text-emerald-400 font-medium border border-emerald-500/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-            >
-                <Rocket className="w-5 h-5 text-emerald-500" /> Hackathon Portal
-            </Link>
 
             <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">System</div>
 

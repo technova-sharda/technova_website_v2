@@ -15,7 +15,16 @@ const nextConfig = {
         '/admin/events/[id]/certificates': ['./public/fonts/certificates/**'],
     },
     images: {
+        // Banners are uploaded with unique names, so optimised copies can be cached for a month.
+        formats: ['image/avif', 'image/webp'],
+        minimumCacheTTL: 2678400,
         remotePatterns: [
+            {
+                // Event banners and other public uploads in Supabase Storage
+                protocol: 'https',
+                hostname: '*.supabase.co',
+                pathname: '/storage/v1/object/public/**',
+            },
             {
                 protocol: 'https',
                 hostname: 'lh3.googleusercontent.com',

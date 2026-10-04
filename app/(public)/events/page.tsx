@@ -7,6 +7,9 @@ export const metadata: Metadata = {
     description: "Upcoming and past Technova workshops, hackathons and tech talks at Sharda University.",
 }
 
+// Pre-built and served from the CDN; rebuilt in the background at most once a minute.
+export const revalidate = 60
+
 export default async function PublicEventsPage() {
     const events = await getCachedPublicEvents()
     return <PublicEventsClient events={events} />

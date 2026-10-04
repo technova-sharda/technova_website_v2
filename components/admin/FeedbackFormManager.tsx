@@ -5,6 +5,7 @@ import { Plus, MessageSquare, Send, Download, Trash2, ChevronDown, ChevronUp, Us
 import { Toast, useToast } from '@/components/ui/toast'
 import { FeedbackFormBuilder } from './FeedbackFormBuilder'
 import { FeedbackFormPreview } from './FeedbackFormPreview'
+import { FeedbackAiSummary } from './FeedbackAiSummary'
 import {
     createFeedbackForm,
     updateFeedbackForm,
@@ -195,6 +196,8 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                     Create Form
                 </button>
             </div>
+
+            {analytics && forms.length > 0 && analytics.totalResponses > 0 && <FeedbackAiSummary eventId={eventId} />}
 
             {/* Analytics Dashboard */}
             {analytics && forms.length > 0 && analytics.totalResponses > 0 && (

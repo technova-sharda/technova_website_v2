@@ -7,6 +7,9 @@ export const metadata: Metadata = {
     description: "Technova's technical clubs at Sharda University: AI & Robotics, CyberPirates, GDG on Campus, GitHub Club and more.",
 }
 
+// Pre-built and served from the CDN; rebuilt in the background at most once a minute.
+export const revalidate = 60
+
 export default async function ClubsPage() {
     const clubs = await getCachedClubs()
     return <ClubsClient clubs={clubs} />

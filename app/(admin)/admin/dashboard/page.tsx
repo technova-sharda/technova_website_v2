@@ -1,3 +1,5 @@
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { createClient as createServerClient } from "@supabase/supabase-js"
 import { Calendar, Users, IndianRupee, Shield, TrendingUp, Activity, Crown, Star, Sparkles } from "lucide-react"
 import { formatDate } from "@/lib/utils"
@@ -62,6 +64,10 @@ async function getAdminStats() {
 }
 
 export default async function AdminDashboardPage() {
+    // Own guard: the admin layout's check runs in parallel with this page, not before it
+    const session = await auth()
+    if (!session) redirect('/login')
+    if (session.user.role !== 'super_admin') return null // the layout shows its "Access restricted" message
     const stats = await getAdminStats()
 
     const statCards = [

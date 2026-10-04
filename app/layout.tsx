@@ -69,10 +69,12 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  // Transparent blue logo (app/icon.png). The old /assets/logo/technova.png has a
+  // white background baked in, which showed as a white square in browser tabs.
   icons: {
-    icon: "/assets/logo/technova.png?v=2",
-    shortcut: "/assets/logo/technova.png?v=2",
-    apple: "/assets/logo/technova.png?v=2",
+    icon: [{ url: "/icon.png?v=3", type: "image/png", sizes: "500x500" }],
+    shortcut: "/favicon.ico?v=3",
+    apple: "/icons/icon-192.png?v=3",
   },
   openGraph: {
     type: "website",

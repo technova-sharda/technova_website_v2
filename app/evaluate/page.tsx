@@ -1,11 +1,12 @@
 import { AlertTriangle } from "lucide-react"
-import { checkHackathonRole, getHackathonSettings, getTeamsForEvaluation, getSupabase } from "@/lib/actions/hackathon"
+import { checkHackathonRole, getHackathonSettings, getTeamsForEvaluation } from "@/lib/actions/hackathon"
+import { createAdminClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import EvaluatorDashboardClient from "@/app/(admin)/admin/hackathon/evaluate/client"
 
 // Helper to fetch evaluator by magic token
 async function getEvaluatorByToken(token: string) {
-    const supabase = await getSupabase()
+    const supabase = createAdminClient()
     const { data } = await supabase
         .from('hackathon_evaluators')
         .select('id, name, email')

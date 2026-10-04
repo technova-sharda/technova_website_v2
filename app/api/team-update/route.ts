@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server"
 import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit"
-import { getSupabase } from "@/lib/actions/hackathon"
+import { createAdminClient } from "@/lib/supabase/server"
 import { Resend } from "resend"
 import { sendEmailOrThrow } from "@/lib/email/send"
 
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json()
         const { action, email, teamId, updates } = body
 
-        const supabase = await getSupabase()
+        const supabase = createAdminClient()
 
         // Action: LOOKUP — find team by member email (any member can view, only leader can update)
         if (action === 'lookup') {

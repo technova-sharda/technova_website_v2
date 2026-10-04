@@ -251,7 +251,6 @@ async function fetchPublicProfileFromDB(userId: string): Promise<PublicProfileRe
         })
     })
 
-    console.log(`[XP History] User ${userId}: ${awards?.length || 0} awards, ${attended?.length || 0} attended, ${feedback?.length || 0} feedback, ${referrals?.length || 0} referrals, ${xpItems.length} total items`)
 
     // Sort by date descending and take recent ones for display
     const recentEvents: RecentEventParticipation[] = xpItems

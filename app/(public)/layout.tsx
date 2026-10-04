@@ -1,17 +1,16 @@
 import { Navbar } from "@/components/layout/navbar"
 import { DevSpaceTabs } from "@/components/layout/devspace-tabs"
-import { auth } from "@/lib/auth"
 
-export default async function PublicLayout({
+// No session read here: the navbar loads the signed-in user in the browser, so
+// public pages can be pre-built and served from Vercel's CDN (instant navigation).
+export default function PublicLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const session = await auth()
-
     return (
         <div className="flex flex-col min-h-screen bg-black text-white dark">
-            <Navbar user={session?.user} />
+            <Navbar />
             <DevSpaceTabs />
             <main className="flex-1 pt-16">
                 {children}

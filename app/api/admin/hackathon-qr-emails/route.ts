@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
         if (!leader || !leader.email || !leader.email.trim()) {
             failed++
             errors.push(`Team "${team.name}": No valid email found for any member.`)
-            console.log(`[QR Email] Failed ${team.name}: No email found. Participants: ${JSON.stringify(participants.map((p: any) => ({ name: p.name, email: p.email })))}`)
+            console.log(`[QR Email] Failed ${team.name}: No email found`)
             continue
         }
 
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
 
                 // Resend reports failures in the result instead of throwing
                 if (result.error) throw new Error(result.error.message)
-                console.log(`[QR Email] Sent to ${recipientEmail} for Team "${team.name}" (${qrMembers.length} QR codes). Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
+                console.log(`[QR Email] Sent for Team "${team.name}" (${qrMembers.length} QR codes). Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
 
                 // Mark team as emailed
                 await supabase.from('hackathon_teams').update({ qr_emailed: true }).eq('id', team.id)
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
                     await delay(2000)
                 } else {
                     const errMsg = err?.message || err?.statusCode || 'unknown error'
-                    console.error(`[QR Email] Failed: ${recipientEmail} for Team "${team.name}":`, errMsg)
+                    console.error(`[QR Email] Failed for Team "${team.name}":`, errMsg)
                     failed++
                     errors.push(`Team "${team.name}" (${recipientEmail}): ${errMsg}`)
                     break
