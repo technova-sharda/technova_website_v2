@@ -1275,7 +1275,9 @@ export async function getPublicShortlistedTeams() {
         .select(`
             id, name, idea_title, table_number, total_score
         `)
-        .ilike('status', '%shortlisted%')
+        // status is an enum, so ILIKE errored ("operator does not exist") and the public
+        // shortlist was always empty. It would also have matched 'not_shortlisted'.
+        .eq('status', 'shortlisted')
         .order('total_score', { ascending: false })
 
     if (error) {

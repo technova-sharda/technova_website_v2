@@ -355,7 +355,11 @@ function DonutChart({ data, total }: { data: [string, number][]; total: number }
     const strokeWidth = 20
     const radius = (size - strokeWidth) / 2
     const circumference = 2 * Math.PI * radius
-    let offset = 0
+    // Each slice starts where the previous ones end.
+    const starts = data.reduce<number[]>((acc, [, count], i) => {
+        acc.push(i === 0 ? 0 : acc[i - 1] + (data[i - 1][1] / total) * circumference)
+        return acc
+    }, [])
 
     return (
         <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -363,8 +367,7 @@ function DonutChart({ data, total }: { data: [string, number][]; total: number }
                 {data.map(([label, count], i) => {
                     const pct = count / total
                     const dashLength = pct * circumference
-                    const dashOffset = -offset
-                    offset += dashLength
+                    const dashOffset = -starts[i]
                     return (
                         <circle key={label} cx={size / 2} cy={size / 2} r={radius}
                             fill="none" strokeWidth={strokeWidth}

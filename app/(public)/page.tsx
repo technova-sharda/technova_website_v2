@@ -427,7 +427,7 @@ export default function LandingPage() {
       {/* ============================================
           ABOUT / VISION & MISSION
           ============================================ */}
-      <section className="py-28 lg:py-36 relative">
+      <section className="py-14 md:py-28 lg:py-36 relative">
         <div className="container mx-auto px-6 lg:px-16">
           {/* Section header */}
           <motion.div
@@ -497,7 +497,7 @@ export default function LandingPage() {
       {/* ============================================
           OFFERINGS — Bento Grid
           ============================================ */}
-      <section className="py-28 lg:py-36 relative overflow-hidden">
+      <section className="py-14 md:py-28 lg:py-36 relative overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[var(--sig-amber)]/[0.03] rounded-full blur-[200px] pointer-events-none" />
 
@@ -576,7 +576,7 @@ export default function LandingPage() {
       {/* ============================================
           CLUBS CAROUSEL
           ============================================ */}
-      <section className="py-28 lg:py-36">
+      <section className="py-14 md:py-28 lg:py-36">
         <div className="container mx-auto px-6 lg:px-16">
           <motion.div
             className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16 gap-6"
@@ -605,12 +605,12 @@ export default function LandingPage() {
       {/* ============================================
           DEVSPACE + CALENDAR
           ============================================ */}
-      <section className="py-28 lg:py-36 border-t border-[var(--sig-border)]">
+      <section className="py-14 md:py-28 lg:py-36 border-t border-[var(--sig-border)]">
         <div className="container mx-auto px-6 lg:px-16">
 
           {/* DevSpace Grid */}
           <motion.div
-            className="mb-24"
+            className="mb-12 md:mb-24"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}

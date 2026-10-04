@@ -6,6 +6,7 @@ import {
     Heading,
     Html,
     Img,
+    Link,
     Preview,
     Row,
     Section,
@@ -20,6 +21,8 @@ interface TicketEmailProps {
     venue: string;
     qrDataUrl: string;
     ticketId: string;
+    /** Google Calendar "add event" link. Optional, so older callers still work. */
+    calendarUrl?: string;
 }
 
 export const TicketEmail = ({
@@ -29,6 +32,7 @@ export const TicketEmail = ({
     venue,
     qrDataUrl,
     ticketId,
+    calendarUrl,
 }: TicketEmailProps) => {
     return (
         <Html>
@@ -75,6 +79,13 @@ export const TicketEmail = ({
                         <Text style={text}>
                             Please show this QR code at the entrance for scanning.
                         </Text>
+                        {calendarUrl && (
+                            <Text style={text}>
+                                <Link href={calendarUrl} style={{ color: "#2563eb", fontWeight: 600 }}>
+                                    📅 Add to Google Calendar
+                                </Link>
+                            </Text>
+                        )}
                     </Section>
                 </Container>
             </Body>

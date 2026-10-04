@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, BarChart, Settings, Home, BookOpen, Rocket, FileText } from "lucide-react"
+import { Calendar, BarChart, Settings, Home, BookOpen, Rocket, FileText, ShieldCheck, UserRound } from "lucide-react"
 
 export function SidebarNav() {
     const pathname = usePathname()
@@ -61,6 +61,16 @@ export function SidebarNav() {
             </Link>
 
             <Link
+                href="/admin/people"
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/people')
+                    ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+            >
+                <UserRound className="w-5 h-5" /> People
+            </Link>
+
+            <Link
                 href="/hackathon-portal"
                 className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/hackathon-portal')
                     ? 'bg-emerald-600/20 text-emerald-400 font-medium border border-emerald-500/30'
@@ -71,6 +81,17 @@ export function SidebarNav() {
             </Link>
 
             <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">System</div>
+
+            {/* The whole admin panel is super-admin only, so everyone who sees this link may use it. */}
+            <Link
+                href="/admin/roles"
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/roles')
+                    ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+            >
+                <ShieldCheck className="w-5 h-5" /> Admin Roles
+            </Link>
 
             <Link
                 href="/admin/settings"

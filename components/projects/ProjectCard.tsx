@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from "sonner";
 import { Project } from "@/types/custom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +30,7 @@ export function ProjectCard({ project, currentUserId, onDelete }: ProjectCardPro
         if (result.success) {
             onDelete?.();
         } else {
-            alert(result.error || "Failed to delete project");
+            toast.error(result.error || "Failed to delete project");
         }
         setIsDeleting(false);
         setShowConfirm(false);

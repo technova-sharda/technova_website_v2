@@ -1,11 +1,10 @@
 'use server'
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { ADMIN_EMAILS } from "@/lib/auth/role-utils";
 
 const createResourceSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
@@ -25,7 +24,8 @@ export async function createResource(prevState: any, formData: FormData) {
         return { error: "You must be logged in to upload resources." };
     }
 
-    const isAdmin = user.email && (ADMIN_EMAILS.includes(user.email) || user.email === 'technova@sharda.ac.in');
+    // Role from the session (managed on the Roles page), not the old hard-coded email list.
+    const isAdmin = user.role === 'admin' || user.role === 'super_admin';
 
     const result = createResourceSchema.safeParse({
         title: formData.get("title"),
@@ -61,6 +61,7 @@ export async function createResource(prevState: any, formData: FormData) {
     }
 
     revalidatePath('/resources');
+    revalidateTag('resources', { expire: 0 });
     revalidatePath('/admin/resources');
     return { success: true };
 }
@@ -145,6 +146,7 @@ export async function approveResource(id: string) {
     if (error) throw new Error(error.message);
 
     revalidatePath('/resources');
+    revalidateTag('resources', { expire: 0 });
     revalidatePath('/admin/resources');
 }
 
@@ -163,5 +165,6 @@ export async function deleteResource(id: string) {
     if (error) throw new Error(error.message);
 
     revalidatePath('/resources');
+    revalidateTag('resources', { expire: 0 });
     revalidatePath('/admin/resources');
 }

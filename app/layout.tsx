@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Sora, DM_Sans } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,6 +27,10 @@ const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.technovashardauniversity.in"),
@@ -179,6 +184,8 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
+        {/* 48 toast() calls in the admin forms and evaluator portal had no Toaster to render into. */}
+        <Toaster theme="dark" position="top-center" richColors closeButton />
       </body>
     </html>
   );

@@ -170,7 +170,7 @@ function BuddyFinderContent() {
             {/* Profile Completion Popup */}
             {showPopup && <ProfilePopup onClose={handleClosePopup} />}
             {/* Hero Section */}
-            <section className="relative py-20 overflow-hidden">
+            <section className="relative py-12 md:py-20 overflow-hidden">
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black" />
                 <div className="absolute top-1/2 right-1/4 w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[120px]" />

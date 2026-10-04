@@ -17,7 +17,7 @@ export default async function CertificatesPage({ params }: PageProps) {
     const session = await auth()
 
     if (!session || !['admin', 'super_admin'].includes(session.user.role)) {
-        redirect('/auth/signin')
+        redirect('/login')
     }
 
     const event = await getEventById(id)

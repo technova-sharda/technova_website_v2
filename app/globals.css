@@ -371,6 +371,14 @@
    ============================================ */
 
 @layer utilities {
+  /* Horizontal tab rows on phones: still scrollable, no visible bar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .glow-orb {
     animation: float 8s ease-in-out infinite;
   }

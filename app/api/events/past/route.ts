@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { revalidateTag } from 'next/cache'
+import { prepareImageUpload, IMMUTABLE_CACHE_CONTROL } from '@/lib/images/optimize'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,11 +34,13 @@ export async function POST(req: NextRequest) {
         // Handle banner upload if provided
         let banner_url = null
         if (bannerFile && bannerFile.size > 0) {
-            const fileName = `past-events/${Date.now()}-${bannerFile.name}`
+            const upload = await prepareImageUpload(bannerFile)
+            const fileName = `past-events/${Date.now()}-${upload.fileName}`
             const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('event-banners')
-                .upload(fileName, bannerFile, {
-                    cacheControl: '3600',
+                .upload(fileName, upload.body, {
+                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                    contentType: upload.contentType,
                     upsert: false
                 })
 
@@ -83,6 +87,8 @@ export async function POST(req: NextRequest) {
             console.error('Create past event error:', error)
             return NextResponse.json({ error: error.message || 'Failed to create past event' }, { status: 500 })
         }
+
+        revalidateTag('public-events', { expire: 0 })
 
         return NextResponse.json({
             success: true,

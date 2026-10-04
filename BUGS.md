@@ -12,15 +12,16 @@
 
 ---
 
-## ✅ Fix checklist: status as of 3 Oct 2026
+## ✅ Fix checklist: status as of 4 Oct 2026 (evening)
+
+**Priorities (your call, 4 Oct):** speed, mobile layout and usefulness for students come first. Security hardening is low priority. **Database fixes are allowed, but data is never deleted** (updated later on 4 Oct).
 
 **Verification:**
-- 0 TypeScript errors (was 15).
-- The production build passes, with type errors now enforced (`ignoreBuildErrors` removed).
-- 0 lint errors in the 72 changed files.
-- Offline tests of fonts, IST dates, rate limits and URL validation pass. The referrer lookup was checked against the live database with SELECT queries only.
-- **No database changes, except the one column you approved** (`events.registrations_closed`), which was backed up first and verified.
-- **Nothing is deployed yet.** Production still runs the old code.
+- 0 TypeScript errors, and the production build passes.
+- Every public page checked at phone width (390 px) in headless Chrome: no sideways scrolling, no browser errors.
+- Pages were checked against the live database with **read-only page loads only** (no clicks, no forms, nothing written).
+- **Database:** the fixes below are written and dry-run tested (inside a transaction that was rolled back), **but not applied yet**. See "Ready to apply".
+- **Nothing is deployed yet.**
 
 ### Fixed in code (21)
 - [x] **S2** Unauthenticated write actions:
@@ -49,7 +50,7 @@
 - [x] **U4** The dashboard shows real health checks, not hard-coded "All Systems Operational".
 - [x] **H1** 0 type errors, the build now checks types, and there's an `npm run typecheck` script.
 
-### New bugs found and fixed today (10)
+### New bugs found and fixed (15)
 - [x] **E1** Resend returns errors instead of throwing. All 16 email call sites counted failures as "sent".
 - [x] **C8** **Dancing Script and Cormorant Garamond crashed certificate generation.** The Start2Code template uses Dancing Script. Each font now has a verified embedding mode, Cormorant uses new files, and a fallback chain means a certificate always generates.
 - [x] **C9** Gaps and collisions in script-font names ("Studen t", "Pr") from ligatures and missing kerning. The PDF now lays text out properly, and the editor preview matches.
@@ -60,43 +61,85 @@
 - [x] **D13** Weekly/monthly/yearly leaderboards ignored check-in XP, about 97% of all XP. This month showed 11 students and 170 XP; the correct figures are 21 and 1,070.
 - [x] **D14** XP-history inserts always failed (bug reports; the feedback award's first attempt).
 - [x] **D15** The feedback XP award could be given twice under a race. It now claims the award atomically.
+- [x] **U5** **Club pages could crash** (`/clubs/[slug]`): `useState`/`useEffect` ran after an early return (rules-of-hooks). The hooks now run first.
+- [x] **U6** The hackathon flipbook reloaded from scratch on every fullscreen toggle (component defined inside a component). Hoisted.
+- [x] **U7** Particles on both auth error pages and the home hackathon teaser jumped to new random spots on every re-render. Positions are now picked once.
+- [x] **U8** The form responses donut chart mutated a variable during render. Slice offsets are now precomputed (same picture).
+- [x] **U9** The photo mapping pointed "Dushyant …" club members at the deleted `datapool/dushyant.png` (broken image). Those three entries are removed; `Dushyant Prajapati` still maps to `technova_main/dushyant_prajapati.jpg`.
 
-### Partly fixed (6)
-- [~] **S8** Phone numbers are no longer sent. Emails stay, because they're shown on purpose. The open database rule is still pending (see below).
-- [~] **R3** Unpaid registrations can't check in, and no payment order is created without a registration. Still missing: the ticket after payment, and retrying a failed payment.
-- [~] **P1** Each route has its own counter, but limits are still in memory (no Redis).
-- [~] **P8** `select('*')` removed where data leaked; still used elsewhere.
-- [~] **U1** The admin Registrations table is now dark. The public event page's white cards are untouched, and the hackathon portal is light by design.
+### New bugs found and fixed (15)
+- [x] **E1** Resend returns errors instead of throwing. All 16 email call sites counted failures as "sent".
+- [x] **C8** **Dancing Script and Cormorant Garamond crashed certificate generation.** The Start2Code template uses Dancing Script. Each font now has a verified embedding mode, Cormorant uses new files, and a fallback chain means a certificate always generates.
+- [x] **C9** Gaps and collisions in script-font names ("Studen t", "Pr") from ligatures and missing kerning. The PDF now lays text out properly, and the editor preview matches.
+- [x] **S9** The attendance kiosk email lookup accepted wildcards (`%@gmail.com` returned a stranger's details). It now requires an exact match, updates need the email, and it's rate-limited.
+- [x] **S10** Buddy Finder returned every student's email to logged-out visitors. It now requires login and shows a sign-in prompt.
+- [x] **D11** The admin Registrations page was already missing rows (1,002 registrations against the 1,000 cap).
+- [x] **D12** "Undo check-in" never took the XP back, so re-scanning gave double XP.
+- [x] **D13** Weekly/monthly/yearly leaderboards ignored check-in XP, about 97% of all XP. This month showed 11 students and 170 XP; the correct figures are 21 and 1,070.
+- [x] **D14** XP-history inserts always failed (bug reports; the feedback award's first attempt).
+- [x] **D15** The feedback XP award could be given twice under a race. It now claims the award atomically.
+- [x] **U5** **Club pages could crash** (`/clubs/[slug]`): `useState`/`useEffect` ran after an early return (rules-of-hooks). The hooks now run first.
+- [x] **U6** The hackathon flipbook reloaded from scratch on every fullscreen toggle (component defined inside a component). Hoisted.
+- [x] **U7** Particles on both auth error pages and the home hackathon teaser jumped to new random spots on every re-render. Positions are now picked once.
+- [x] **U8** The form responses donut chart mutated a variable during render. Slice offsets are now precomputed (same picture).
+- [x] **U9** The photo mapping pointed "Dushyant …" club members at the deleted `datapool/dushyant.png` (broken image). Those three entries are removed; `Dushyant Prajapati` still maps to `technova_main/dushyant_prajapati.jpg`.
+
+### ⚡ Speed and mobile: fixed 4 Oct (10)
+- [x] **P2** `/events`, `/clubs`, `/clubs/[slug]`, `/leadership`, `/resources`, `/community` and `/showcase` are rendered on the server. Students get a filled page straight away: no spinner, no second round-trip. Each page also has a proper title for Google.
+- [x] **P3** Events, clubs, club past events and resources come from a shared server cache (`lib/data/public-cache.ts`): 1–5 min, cleared immediately when an admin edits an event or resource. Most visits never reach the database.
+- [x] **P4** Event and past-event banners are shrunk on upload: phone rotation fixed, max 1920 px wide, WebP. A 10 MB test photo became 1.3 MB; a real phone photo ends up a few hundred KB. Uploads are cached for a year, and list images load lazily. *(Banners already uploaded keep their size.)*
+- [x] **P9** The event page (where students register) ran ~7 database calls one after another. The independent ones now run in parallel.
+- [x] **U3** Loading states: pages now arrive with their data, and the existing `loading.tsx` skeletons cover navigation.
+- [x] **U10** `/community` was 507 px wide on phones (sideways scrolling). The tab bar now fits and scrolls inside itself; the `no-scrollbar` class it relied on didn't exist and is now defined.
+- [x] **U11** New community posts didn't appear until a manual reload (the page fetched once in the browser). They now appear right after posting.
+- [x] **U2** The last 2 `alert()` popups outside the scanners are now toasts. `confirm()` before deletes stays on purpose.
+- [x] **T1** **48 toast messages never showed.** The admin form pages and the evaluator portal call `toast()`, but no `<Toaster>` was mounted. It's now in the root layout.
+- [x] **HK1** **The public hackathon shortlist was always empty.** The query ran `ILIKE` on an enum column, which Postgres rejects. It now uses an exact match (230 teams show). The old pattern would also have matched `not_shortlisted`.
+
+### 📱 Mobile and usefulness: fixed 4 Oct, later (6)
+- [x] **U12** **Big empty gaps on phones.** Section padding was desktop-sized (`py-28` = 224 px between sections, most of a short phone screen). Halved on phones across all public pages. The leadership mentor carousel had a fixed 1,350 px height; it now fits its content.
+- [x] **U13** **The student dashboard was all placeholders** ("0 events attended", "No registrations yet" for everyone). It now shows real XP, rank, attended count, certificates, upcoming registrations with ticket and calendar links, and past events with certificates.
+- [x] **U14** Two pages sent logged-out users to `/auth/signin`, which doesn't exist. They now go to `/login`.
+- [x] **S4** Admin roles are now managed on the **Admin Roles** page (super admins only). Two places that still trusted the old hard-coded email list (resource auto-approval, dashboard admin count) now use the real role.
+- [x] **D8** Bulk attendance: see FEATURES.md F7.
+- [x] **R1 (app side)** If the database refuses a registration because the event is full, students see "Event Full" instead of a raw error.
+
+### Partly fixed (4)
+- [~] **R3** Unpaid registrations can't check in, and no payment order is created without a registration. Still missing: the ticket after payment, and retrying a failed payment. *(No paid events exist yet.)*
+- [~] **P1** Each route has its own rate-limit counter, but the limits are in memory (no Redis). Fine at current traffic.
+- [~] **P8** `select('*')` removed where it mattered; still used in admin-only places.
 - [~] **H3** Debug logs with user IDs removed from the referral and registration paths.
 
-### ⏳ Needs your approval: database changes, NOT applied (5)
-- [ ] **S1 / C6** Lock down the open access rules (SQL in section S1). **Highest priority.**
-- [ ] **S8** Drop the "Public read members" rule.
-- [ ] **R1** A SQL function so capacity can't be overbooked.
-- [ ] **P5** Add an index on `registrations(event_id)`; drop the duplicate indexes.
-- [ ] **D10** 413 users' XP totals don't match their award history. Needs a decision on how to reconcile.
+### ✋ Not a bug / by design (3)
+- [x] **S8** Club member / executive emails and phone numbers are public **on purpose**, so students can contact them.
+- [x] **U1** The event page and the hackathon portal use a light design. They're consistent within themselves and readable on phones.
+- [x] **H2** `react@18` in package.json. Next's App Router uses its own bundled React, so there's no visible effect, and upgrading would risk breaking the UI libraries.
 
-### 👤 Needs your action or decision (5)
-- [ ] **C1** Deploy. Ideally after AI KickStart ends (4 Oct, 11 PM IST), or before 8 PM today if you need Stop Registrations live.
-- [ ] **D3** Reminders need a cron every 30–60 min (Vercel Pro or an external cron) plus `CRON_SECRET`.
-- [ ] **S4** Admin roles are hard-coded.
-- [ ] **H5** One-off scripts in the repo root.
-- [ ] `public/assets/team/datapool/dushyant.png` was deleted, but the photo mapping still points to it. `ko.png` is unused.
+### 🗄️ Ready to apply: database fixes (3). Nothing deleted
+File: `supabase/migrations/20261004_db_fixes.sql`. Rollback: `supabase/rollbacks/20261004_db_fixes_rollback.sql` (restores every policy exactly). Dry run on production inside a rolled-back transaction: row counts unchanged, full event refused, open event accepted.
+- [ ] **S1 / C6** Remove the 15 "allow everyone" policies (certificates, XP, check-ins, feedback, evaluator tokens, attendee phones). The app only reads public tables with the browser key, and those keep their policies.
+- [ ] **R1** Trigger that refuses a registration once an event is full, one at a time per event, so the last seat can't be taken twice.
+- [ ] **P5** Index on `registrations(event_id)`. Duplicate indexes are left alone.
+- [ ] Plus the new `role_changes` history table for the Admin Roles page.
 
-### 🔜 Still to do (13)
-- [ ] **NEW:** `app/(public)/clubs/[slug]/page.tsx:406-410` calls `useState`/`useEffect` conditionally (rules-of-hooks), which **can crash club pages**. Found, not yet fixed.
-- [ ] **D8** Bulk attendance (feature)
-- [ ] **C5** Cache generated PDFs
-- [ ] **P2** Server-render public pages
-- [ ] **P3** Caching
-- [ ] **P4** Resize images on upload
-- [ ] **U2** Replace `alert()`/`confirm()`
-- [ ] **U3** Loading states
-- [ ] **H2** React 19
-- [ ] **H4** `@ts-ignore` / `as any`
-- [ ] **H6** Exported `getSupabase` in `hackathon.ts`
-- [ ] **H7** Tests and monitoring
-- [ ] Kiosk email one-time code, and 61 cosmetic lint errors in untouched files
+### ❓ Needs your decision (data rewrite)
+- [ ] **D10** 413 users' XP totals don't match their check-in/award history. Some XP sources (referrals, bug reports) never wrote history rows, so "fixing" totals from history could take XP away from students. Not touched.
+
+### 👤 Needs your decision (3)
+- [ ] **C1** Deploy (after AI KickStart ends tonight, 11 PM IST).
+- [ ] **D3** Event reminder emails have never been sent: there's no cron. Needs `CRON_SECRET` plus a schedule (a Vercel cron on Pro, or a free external cron every 30 min). This emails real students automatically, so it's your call.
+- [ ] `ko.png` in the team photos is unused.
+
+### 🔒 Low priority: security (per your call) (3)
+- [ ] **H6** Each action file creates its own service-role client.
+- [ ] Kiosk email one-time code.
+- [ ] **H5** One-off scripts in the repo root (incl. `delete-user.mjs`).
+
+### 🔜 Still to do: features and clean-up (4)
+- [ ] **C5** Cache generated certificate PDFs
+- [ ] **H4** `@ts-ignore` / `as any` clean-up
+- [ ] **H7** Tests and error monitoring
+- [ ] 48 lint errors, none of them runtime bugs: 31 unescaped `'`/`"` in text, 12 "setState in effect" (`mounted` patterns that drive animations, fetch-then-set), 4 in the QR scanner pages (left alone so live scanning isn't put at risk), 1 memoization notice.
 
 ---
 
@@ -107,7 +150,7 @@
 | S1 | Database rules let **anyone with the public browser key** read and write certificates, XP, feedback, check-ins, evaluator tokens, and attendee phone numbers and QR codes | 🔴 | Verified (DB) |
 | S2 | Server actions with **no login check** that write data: add/delete sponsorship money, trigger mass reminder emails, farm referral XP, edit attendee details | 🔴 | Verified (code) |
 | S3 | Server actions with no login check that **leak data**: evaluator magic tokens, every form answer with names/emails, attendee lookup | 🔴 | Verified (code) |
-| S8 | Club members' **phone numbers and emails** are sent to every visitor of `/leadership` and the club pages | 🟠 | Verified (code+DB) |
+| S8 | Club members' phone numbers and emails are public | — | **Intentional** (so students can contact them) |
 | D1 | **Referrals silently fail for ~27% of users** (user list capped at 1000 rows; you have 1,368) | 🟠 | Verified (DB+code) |
 | D3 | **Event reminder emails have never been sent** (no cron schedule; 0 of 19 events) | 🟠 | Verified (DB) |
 | C3 | Certificate downloads are rate-limited to **5/min per IP**; on campus Wi-Fi the whole campus shares one IP | 🟠 | Verified (code) |
@@ -214,7 +257,9 @@ Every exported function in a `'use server'` file is a **public HTTP endpoint**, 
 - `getPublicEvents` (`lib/actions/events.ts:338`) returns `select('*')` to every visitor, including **`meeting_link`** for online events, even for people who haven't registered.
 - **Fix:** select only public columns, and serve `meeting_link` only to registered users.
 
-### 🟠 S8. Club members' phone numbers and emails are public. Verified (code+DB)
+### ✋ S8. Club members' phone numbers and emails are public. Intentional, not a bug
+> **Decision (4 Oct):** this is on purpose, so students can contact club members and executives. Nothing below will be applied.
+
 `club_members` stores `phone` and `email` (60 members). They leak two ways:
 - **In page data:** `getClubMembersByName`, `getClubWithMembers` and `getClubs` (`lib/actions/clubs.ts`) use `select('*')`, and their results go to public pages (`/leadership`, `/clubs/[slug]`). Every visitor downloads executives' phone numbers and emails; they're visible in the browser's network tab.
 - **Through the public key:** the "Public read members" rule makes the same columns readable with the anon key.

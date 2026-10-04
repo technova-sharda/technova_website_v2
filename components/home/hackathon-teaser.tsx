@@ -6,8 +6,20 @@ import { ArrowRight, Code2, Zap, Rocket, Terminal } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 // Particle Background Animation
+function randomParticles(count: number, minDuration: number) {
+    return Array.from({ length: count }, () => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        duration: Math.random() * minDuration + minDuration,
+        delay: Math.random() * 5,
+    }))
+}
+
 function ParticleBackground() {
     const [mounted, setMounted] = useState(false)
+    // Picked once; computing these during render moved every particle on each re-render.
+    const [blue] = useState(() => randomParticles(20, 5))
+    const [purple] = useState(() => randomParticles(15, 6))
 
     useEffect(() => {
         setMounted(true)
@@ -17,13 +29,13 @@ function ParticleBackground() {
 
     return (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(20)].map((_, i) => (
+            {blue.map((p, i) => (
                 <motion.div
                     key={i}
                     className="absolute w-2 h-2 bg-blue-500 rounded-full blur-[2px]"
                     style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
+                        left: `${p.left}%`,
+                        top: `${p.top}%`,
                     }}
                     animate={{
                         y: [0, -100, 0],
@@ -31,20 +43,20 @@ function ParticleBackground() {
                         scale: [0, 1.5, 0],
                     }}
                     transition={{
-                        duration: Math.random() * 5 + 5,
+                        duration: p.duration,
                         repeat: Infinity,
                         ease: "linear",
-                        delay: Math.random() * 5,
+                        delay: p.delay,
                     }}
                 />
             ))}
-            {[...Array(15)].map((_, i) => (
+            {purple.map((p, i) => (
                 <motion.div
                     key={`purple-${i}`}
                     className="absolute w-3 h-3 bg-purple-500 rounded-full blur-[3px]"
                     style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
+                        left: `${p.left}%`,
+                        top: `${p.top}%`,
                     }}
                     animate={{
                         x: [0, 100, 0],
@@ -52,10 +64,10 @@ function ParticleBackground() {
                         scale: [0, 1.2, 0],
                     }}
                     transition={{
-                        duration: Math.random() * 6 + 6,
+                        duration: p.duration,
                         repeat: Infinity,
                         ease: "linear",
-                        delay: Math.random() * 5,
+                        delay: p.delay,
                     }}
                 />
             ))}
@@ -65,7 +77,7 @@ function ParticleBackground() {
 
 export function HackathonTeaser() {
     return (
-        <section className="relative py-32 overflow-hidden bg-black border-y border-white/5">
+        <section className="relative py-16 md:py-32 overflow-hidden bg-black border-y border-white/5">
             {/* Background elements */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15)_0,transparent_50%)]" />
             <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-purple-900/20 to-transparent blur-[100px]" />

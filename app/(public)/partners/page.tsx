@@ -14,7 +14,7 @@ export default function PartnersPage() {
             <AnimatedBackground />
 
             {/* Hero Section */}
-            <section className="relative py-32 md:py-40 overflow-hidden">
+            <section className="relative py-16 md:py-32 lg:py-40 overflow-hidden">
                 {/* Grid Overlay */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
 
@@ -83,7 +83,7 @@ export default function PartnersPage() {
             </section>
 
             {/* Value Proposition */}
-            <section className="py-24 relative overflow-hidden">
+            <section className="py-14 md:py-24 relative overflow-hidden">
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <motion.div
@@ -154,7 +154,7 @@ export default function PartnersPage() {
             </section>
 
             {/* Partnership Inquiry Form */}
-            <section className="py-24 relative overflow-hidden">
+            <section className="py-14 md:py-24 relative overflow-hidden">
                 <div className="container mx-auto px-4 relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

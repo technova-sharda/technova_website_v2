@@ -143,7 +143,7 @@ export function ClubsCarousel() {
                                 {/* Logo */}
                                 <div className="h-28 w-28 mb-6 relative flex items-center justify-center rounded-xl bg-white shadow-sm group-hover/card:shadow-md transition-shadow duration-300 overflow-hidden">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
+                                    <img loading="lazy" decoding="async"
                                         src={club.logo}
                                         alt={club.name}
                                         className="w-20 h-20 object-contain"

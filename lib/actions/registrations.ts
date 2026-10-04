@@ -1,5 +1,6 @@
 'use server'
 
+import { googleCalendarUrl, toCalendarEntry } from "@/lib/calendar/event-calendar"
 import { createClient as createServerClient } from "@supabase/supabase-js"
 import { auth } from "@/lib/auth"
 import { createOrder } from "@/lib/payments/razorpay"
@@ -76,6 +77,8 @@ export async function registerForEvent(eventId: string, answers?: Record<string,
         // Never hand out a payment order without a registration to attach the payment to
         if (pendingInsertError) {
             if (pendingInsertError.code === '23505') throw new Error("Already Registered")
+            // Raised by the registrations_enforce_capacity trigger when two students race for the last seat
+            if (pendingInsertError.message?.includes('EVENT_FULL')) throw new Error("Event Full")
             throw new Error("Could not start registration. Please try again.")
         }
         return { status: 'payment_required', order }
@@ -112,6 +115,7 @@ export async function registerForEvent(eventId: string, answers?: Record<string,
         if (error) {
             // 23505 = unique (user_id, event_id): a double-click or second tab registered first
             if (error.code === '23505') throw new Error("Already Registered")
+            if (error.message?.includes('EVENT_FULL')) throw new Error("Event Full")
             throw new Error(error.message)
         }
 
@@ -142,7 +146,8 @@ export async function registerForEvent(eventId: string, answers?: Record<string,
                     eventDate: `${formatDateShort(event.start_time)}, ${formatTime(event.start_time)} IST`,
                     venue: event.venue,
                     qrDataUrl: 'cid:qrcode', // Use CID reference for inline attachment
-                    ticketId: token
+                    ticketId: token,
+                    calendarUrl: googleCalendarUrl(toCalendarEntry(event)),
                 }))
 
                 const { data, error: emailError } = await resend.emails.send({

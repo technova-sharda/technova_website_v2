@@ -147,6 +147,14 @@ export function ReferralShare({ eventSlugOrId, eventTitle }: ReferralShareProps)
                                                     <span>Share</span>
                                                 </button>
                                             </div>
+                                            <a
+                                                href={`https://wa.me/?text=${encodeURIComponent(`I'm attending ${eventTitle}! Register here: ${referralLink}`)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#1ebe5b] text-black rounded-lg transition-colors font-semibold"
+                                            >
+                                                Share on WhatsApp
+                                            </a>
                                         </div>
                                     ) : (
                                         <p className="text-gray-500 text-center py-4">

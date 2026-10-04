@@ -235,7 +235,7 @@ export default function LiveDashboardClient({
                         {[...Array(6)].map((_, i) => (
                             <span key={i} className="flex items-center">
                                 <span className="px-8 text-black flex items-center"><Megaphone className="inline-block w-6 h-6 mr-3" /> {initialSettings.active_announcement}</span>
-                                <span className="px-8 text-black/50">///</span>
+                                <span className="px-8 text-black/50">{'///'}</span>
                             </span>
                         ))}
                    </motion.div>

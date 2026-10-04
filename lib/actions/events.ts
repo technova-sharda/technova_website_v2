@@ -3,9 +3,10 @@
 import { createClient as createServerClient } from "@supabase/supabase-js"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { generateEventSlug } from "@/lib/utils/slugify"
 import { parseDateTimeLocal } from "@/lib/utils"
+import { prepareImageUpload, IMMUTABLE_CACHE_CONTROL } from "@/lib/images/optimize"
 
 // Helper to get authenticated client or admin client
 async function getSupabase() {
@@ -35,10 +36,13 @@ export async function createEvent(formData: FormData) {
     let banner = formData.get("banner") as string
 
     if (bannerFile && bannerFile.size > 0) {
+        const upload = await prepareImageUpload(bannerFile)
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('events')
-            .upload(`${Date.now()}-${bannerFile.name}`, bannerFile, {
-                upsert: true
+            .upload(`${Date.now()}-${upload.fileName}`, upload.body, {
+                upsert: true,
+                contentType: upload.contentType,
+                cacheControl: IMMUTABLE_CACHE_CONTROL
             })
 
         if (uploadError) {
@@ -141,6 +145,7 @@ export async function createEvent(formData: FormData) {
     await supabase.from('events').update({ slug }).eq('id', newEvent.id)
 
     revalidatePath("/events")
+    revalidateTag("public-events", { expire: 0 })
     revalidatePath("/admin/events")
 
     return { success: true, message: "Event created successfully!", eventId: newEvent.id, slug }
@@ -167,10 +172,13 @@ export async function updateEvent(formData: FormData) {
     let banner = formData.get("banner") as string
 
     if (bannerFile && bannerFile.size > 0) {
+        const upload = await prepareImageUpload(bannerFile)
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('events')
-            .upload(`${Date.now()}-${bannerFile.name}`, bannerFile, {
-                upsert: true
+            .upload(`${Date.now()}-${upload.fileName}`, upload.body, {
+                upsert: true,
+                contentType: upload.contentType,
+                cacheControl: IMMUTABLE_CACHE_CONTROL
             })
 
         if (uploadError) {
@@ -255,6 +263,7 @@ export async function updateEvent(formData: FormData) {
 
     const slug = generateEventSlug(title, id)
     revalidatePath("/events")
+    revalidateTag("public-events", { expire: 0 })
     revalidatePath("/admin/events")
     revalidatePath(`/events/${id}`)
     revalidatePath(`/events/${slug}`)
@@ -277,6 +286,7 @@ export async function deleteEvent(id: string) {
     }
 
     revalidatePath("/events")
+    revalidateTag("public-events", { expire: 0 })
     revalidatePath("/admin/events")
 }
 
@@ -325,6 +335,7 @@ export async function togglePastEvent(eventId: string) {
     }
 
     revalidatePath("/events")
+    revalidateTag("public-events", { expire: 0 })
     revalidatePath("/admin/events")
     revalidatePath(`/events/${eventId}`)
     revalidatePath(`/admin/events/${eventId}`)
@@ -359,6 +370,7 @@ export async function setRegistrationsClosed(eventId: string, closed: boolean) {
     }
 
     revalidatePath("/events")
+    revalidateTag("public-events", { expire: 0 })
     revalidatePath("/admin/events")
     revalidatePath("/events/[id]", "page")  // public event pages are addressed by slug or id
     revalidatePath(`/admin/events/${eventId}`)
@@ -482,30 +494,26 @@ export async function getEventBySlugOrId(slugOrId: string) {
         event = eventById
     }
 
-    // Fetch registration count
-    const { count } = await supabase
-        .from('registrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', event.id)
-
-    // Fetch POC details if available
-    let pocDetails = null
-    if (event.poc_name && event.club_id) {
-        const { data: member } = await supabase
-            .from('club_members')
-            .select('email, phone, role')
-            .eq('club_id', event.club_id)
-            .eq('name', event.poc_name)
-            .single()
-
-        if (member) {
-            pocDetails = member
-        }
-    }
-
-    const meeting_link = event.meeting_link && await canSeeMeetingLink(supabase, event.id)
-        ? event.meeting_link
-        : null
+    // Count, POC and meeting-link check don't depend on each other: run them together.
+    const [{ count }, pocDetails, meeting_link] = await Promise.all([
+        supabase
+            .from('registrations')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.id),
+        // POC details, if the event names one
+        event.poc_name && event.club_id
+            ? supabase
+                .from('club_members')
+                .select('email, phone, role')
+                .eq('club_id', event.club_id)
+                .eq('name', event.poc_name)
+                .single()
+                .then(({ data }) => data ?? null)
+            : Promise.resolve(null),
+        event.meeting_link
+            ? canSeeMeetingLink(supabase, event.id).then(ok => (ok ? event.meeting_link : null))
+            : Promise.resolve(null),
+    ])
 
     return {
         ...event,
