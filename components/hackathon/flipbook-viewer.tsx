@@ -3,14 +3,10 @@
 import { useState } from 'react'
 import { Maximize2, Minimize2, X } from 'lucide-react'
 
-export function FlipbookViewer() {
-    const [isFullscreen, setIsFullscreen] = useState(false)
-
-    const toggleFullscreen = () => {
-        setIsFullscreen(!isFullscreen)
-    }
-
-    const BookContent = () => (
+// Defined outside FlipbookViewer: a component declared inside it is a new type
+// on every render, so React remounted the iframe (reloading the flipbook) each time.
+function BookContent() {
+    return (
         <div className="w-full h-full relative rounded-xl md:rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)]">
             <iframe
                 allowFullScreen={true}
@@ -20,6 +16,14 @@ export function FlipbookViewer() {
             />
         </div>
     )
+}
+
+export function FlipbookViewer() {
+    const [isFullscreen, setIsFullscreen] = useState(false)
+
+    const toggleFullscreen = () => {
+        setIsFullscreen(!isFullscreen)
+    }
 
     return (
         <div className="w-full flex flex-col items-center gap-8 py-8">

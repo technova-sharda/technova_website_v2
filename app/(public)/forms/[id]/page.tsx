@@ -37,7 +37,7 @@ export default async function PublicFormPage({ params, searchParams }: { params:
             <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
                 <div className="max-w-md text-center space-y-4">
                     <h1 className="text-4xl font-bold tracking-tighter text-amber-400">Form Not Published</h1>
-                    <p className="text-zinc-400">This form exists but hasn't been published yet. Please check back later.</p>
+                    <p className="text-zinc-400">This form exists but hasn&apos;t been published yet. Please check back later.</p>
                     <Link href="/" className="inline-block mt-8 text-sm uppercase tracking-widest text-zinc-500 hover:text-white transition-colors">
                         Return Home
                     </Link>
@@ -59,7 +59,7 @@ export default async function PublicFormPage({ params, searchParams }: { params:
                         </svg>
                     </div>
                     <h1 className="text-2xl font-bold tracking-tight">Already Submitted</h1>
-                    <p className="text-zinc-400">You've already submitted a response to this form. Editing is not allowed.</p>
+                    <p className="text-zinc-400">You&apos;ve already submitted a response to this form. Editing is not allowed.</p>
                     <Link href="/" className="inline-block mt-6 text-sm text-blue-400 hover:underline">
                         Return Home
                     </Link>

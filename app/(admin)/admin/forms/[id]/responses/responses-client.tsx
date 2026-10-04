@@ -4,8 +4,7 @@ import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Download, Send, X, Loader2, Mail, Users, UserCheck,
-    CheckSquare, Square, Search, Trash2, BarChart3, PieChart, Calendar
-} from "lucide-react"
+    CheckSquare, Square, Search, Trash2, BarChart3, PieChart, Calendar, Lightbulb } from "lucide-react"
 import { exportFormResponsesToCSV, sendEmailToRespondents, clearFormResponses, deleteSelectedResponses } from "@/lib/actions/forms"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -355,7 +354,11 @@ function DonutChart({ data, total }: { data: [string, number][]; total: number }
     const strokeWidth = 20
     const radius = (size - strokeWidth) / 2
     const circumference = 2 * Math.PI * radius
-    let offset = 0
+    // Each slice starts where the previous ones end.
+    const starts = data.reduce<number[]>((acc, [, count], i) => {
+        acc.push(i === 0 ? 0 : acc[i - 1] + (data[i - 1][1] / total) * circumference)
+        return acc
+    }, [])
 
     return (
         <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -363,8 +366,7 @@ function DonutChart({ data, total }: { data: [string, number][]; total: number }
                 {data.map(([label, count], i) => {
                     const pct = count / total
                     const dashLength = pct * circumference
-                    const dashOffset = -offset
-                    offset += dashLength
+                    const dashOffset = -starts[i]
                     return (
                         <circle key={label} cx={size / 2} cy={size / 2} r={radius}
                             fill="none" strokeWidth={strokeWidth}
@@ -485,7 +487,7 @@ function EmailComposer({ formId, formTitle, totalRespondents, selectedUserIds, o
                         <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={5}
                             placeholder="Type your message here... Use {{name}} to personalize."
                             className="w-full px-4 py-3 rounded-xl bg-[#0a0a0b] border border-[#27272a] text-white placeholder:text-[#3f3f46] focus:border-[#3b82f6] outline-none transition-all resize-none" />
-                        <p className="text-xs text-[#52525b]">💡 Use <code className="text-[#a78bfa] bg-[#1e1e22] px-1.5 py-0.5 rounded">{"{{name}}"}</code> for personalization.</p>
+                        <p className="text-xs text-[#52525b] flex items-center gap-1.5 flex-wrap"><Lightbulb className="w-3.5 h-3.5" /> Use <code className="text-[#a78bfa] bg-[#1e1e22] px-1.5 py-0.5 rounded">{"{{name}}"}</code> for personalization.</p>
                     </div>
                     <div className="flex justify-end gap-3 pt-1">
                         <button onClick={onClose} className="h-11 px-6 rounded-xl bg-[#1e1e22] hover:bg-[#27272a] text-[#a1a1aa] text-sm font-medium transition-all">Cancel</button>

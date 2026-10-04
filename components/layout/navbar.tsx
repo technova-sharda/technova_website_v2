@@ -1,23 +1,22 @@
 'use client'
 
 import { UserNav } from "../auth/user-nav"
+import { useSessionUser, type SessionUser } from "../auth/use-session-user"
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, X, LayoutDashboard, Rocket } from "lucide-react"
+import { Menu, X, LayoutDashboard, Rocket, User, Settings, LogOut } from "lucide-react"
 
 interface NavbarProps {
-    user?: {
-        name?: string | null
-        email?: string | null
-        image?: string | null
-        role?: 'student' | 'admin' | 'super_admin' | 'evaluator' | 'student_lead'
-    }
+    /** Server-known user (dashboard). Leave out on public pages: the navbar asks the browser session itself. */
+    user?: SessionUser | null
 }
 
 import { ChevronDown } from "lucide-react"
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ user: knownUser }: NavbarProps) {
     const [isOpen, setIsOpen] = useState(false)
+    const user = useSessionUser(knownUser)
+    const loadingUser = user === undefined
 
     const publicLinks = [
         { href: "/", label: "Home" },
@@ -115,7 +114,10 @@ export function Navbar({ user }: NavbarProps) {
                             </>
                         )}
 
-                        {user ? (
+                        {loadingUser ? (
+                            // Placeholder while the session loads, so signed-in users don't see "Login" flash
+                            <div className="ml-2 h-9 w-9 rounded-full bg-white/10 animate-pulse" aria-hidden />
+                        ) : user ? (
                             <div className="ml-2">
                                 <UserNav user={user} />
                             </div>
@@ -195,7 +197,7 @@ export function Navbar({ user }: NavbarProps) {
                             )}
                         </div>
 
-                        {user ? (
+                        {loadingUser ? null : user ? (
                             <div className="border-t border-white/10 mt-4 pt-4 space-y-1">
                                 <p className="text-xs text-gray-500 px-4 mb-2">Account</p>
 
@@ -216,17 +218,17 @@ export function Navbar({ user }: NavbarProps) {
                                 {/* Profile Links */}
                                 <Link
                                     href="/profile"
-                                    className="block text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
+                                    className="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
                                     onClick={() => setIsOpen(false)}
                                 >
-                                    👤 My Profile
+                                    <User className="w-4 h-4" /> My Profile
                                 </Link>
                                 <Link
                                     href="/profile/edit"
-                                    className="block text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
+                                    className="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
                                     onClick={() => setIsOpen(false)}
                                 >
-                                    ⚙️ Edit Profile
+                                    <Settings className="w-4 h-4" /> Edit Profile
                                 </Link>
 
                                 {/* Logout Button */}
@@ -235,9 +237,9 @@ export function Navbar({ user }: NavbarProps) {
                                         setIsOpen(false)
                                         import('next-auth/react').then(({ signOut }) => signOut({ callbackUrl: '/' }))
                                     }}
-                                    className="block w-full text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-4 rounded-lg"
+                                    className="flex items-center gap-3 w-full text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-4 rounded-lg"
                                 >
-                                    🚪 Logout
+                                    <LogOut className="w-4 h-4" /> Logout
                                 </button>
                             </div>
                         ) : (

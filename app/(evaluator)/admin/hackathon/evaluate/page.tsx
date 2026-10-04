@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { checkEvaluatorAccess, getHackathonSettings, getTeamsForEvaluation, getSupabase } from "@/lib/actions/hackathon"
+import { checkEvaluatorAccess, getHackathonSettings, getTeamsForEvaluation } from "@/lib/actions/hackathon"
+import { createAdminClient } from "@/lib/supabase/server"
 import EvaluatorDashboardClient from "@/app/(admin)/admin/hackathon/evaluate/client"
 import { ShieldAlert, LogOut } from "lucide-react"
 import Link from "next/link"
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 // Helper to fetch evaluator by magic token
 async function getEvaluatorByToken(token: string) {
-    const supabase = await getSupabase()
+    const supabase = createAdminClient()
     const { data } = await supabase
         .from('hackathon_evaluators')
         .select('id, name, email')

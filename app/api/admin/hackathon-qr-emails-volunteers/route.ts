@@ -33,7 +33,7 @@ function buildVolunteerQrEmailHtml(name: string, id: string, shift: string | nul
                         <tr>
                             <td style="background: linear-gradient(135deg, #7c3aed, #4f46e5); padding:32px 40px; text-align:center;">
                                 <h1 style="margin:0; color:#fff; font-size:24px; font-weight:800; letter-spacing:-0.5px;">
-                                    🚀 CodeMania Hackathon
+                                    CodeMania Hackathon
                                 </h1>
                                 <p style="margin:8px 0 0; color:rgba(255,255,255,0.85); font-size:14px;">
                                     By Technova Society • Volunteer QR Pass
@@ -45,8 +45,7 @@ function buildVolunteerQrEmailHtml(name: string, id: string, shift: string | nul
                         <tr>
                             <td style="padding:40px;">
                                 <p style="color:#e5e7eb; font-size:16px; margin:0 0 8px;">
-                                    Hi <strong style="color:#fff;">${name}</strong>, Wecome aboard! 🎉
-                                </p>
+                                    Hi <strong style="color:#fff;">${name}</strong>, Wecome aboard!                                 </p>
                                 <p style="color:#9ca3af; font-size:14px; margin:0 0 24px; line-height:1.6;">
                                     We are absolutely thrilled to welcome you as a volunteer for the <strong>CodeMania Hackathon</strong>. Events like this are truly powered by the dedication, energy, and hard work of people like you.
                                 </p>
@@ -62,13 +61,13 @@ function buildVolunteerQrEmailHtml(name: string, id: string, shift: string | nul
                                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
                                     <tr>
                                         <td style="padding:12px 16px; background:rgba(124,58,237,0.15); border-radius:12px; border:1px solid rgba(124,58,237,0.2);">
-                                            <p style="margin:0; color:#c4b5fd; font-size:14px; font-weight:600;">✅ Volunteer Check-in & Meals</p>
+                                            <p style="margin:0; color:#c4b5fd; font-size:14px; font-weight:600;">Volunteer Check-in & Meals</p>
                                         </td>
                                     </tr>
                                     ${shift ? `
                                     <tr>
                                         <td style="padding:12px 16px; margin-top:8px; display:block; background:rgba(79,70,229,0.15); border-radius:12px; border:1px solid rgba(79,70,229,0.2);">
-                                            <p style="margin:0; color:#a5b4fc; font-size:14px; font-weight:600;">⏱ Assigned Shift: ${shift}</p>
+                                            <p style="margin:0; color:#a5b4fc; font-size:14px; font-weight:600;">Assigned Shift: ${shift}</p>
                                         </td>
                                     </tr>` : ''}
                                 </table>
@@ -87,7 +86,7 @@ function buildVolunteerQrEmailHtml(name: string, id: string, shift: string | nul
                                 </table>
                                 
                                 <p style="color:#6b7280; font-size:12px; margin:24px 0 0; text-align:center; line-height:1.5;">
-                                    💡 <strong style="color:#9ca3af;">Tip:</strong> Take a screenshot of your QR code for quick access on hackathon day.
+                                    <strong style="color:#9ca3af;">Tip:</strong> Take a screenshot of your QR code for quick access on hackathon day.
                                 </p>
                             </td>
                         </tr>
@@ -167,13 +166,13 @@ export async function POST(request: NextRequest) {
                 const result = await resend.emails.send({
                     from: 'Technova <noreply@technovashardauniversity.in>',
                     to: recipientEmail,
-                    subject: `🎟️ Your Volunteer QR Pass — CodeMania Hackathon`,
+                    subject: `Your Volunteer QR Pass — CodeMania Hackathon`,
                     html
                 })
 
                 // Resend reports failures in the result instead of throwing
                 if (result.error) throw new Error(result.error.message)
-                console.log(`[Volunteer QR Email] ✅ Sent to ${recipientEmail} for Volunteer "${volunteer.name}". Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
+                console.log(`[Volunteer QR Email] Sent for Volunteer "${volunteer.name}". Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
 
                 // Mark volunteer as emailed
                 await supabase.from('hackathon_volunteers').update({ qr_emailed: true }).eq('id', volunteer.id)
@@ -187,7 +186,7 @@ export async function POST(request: NextRequest) {
                     await delay(2000)
                 } else {
                     const errMsg = err?.message || err?.statusCode || 'unknown error'
-                    console.error(`[Volunteer QR Email] ❌ Failed: ${recipientEmail} for Volunteer "${volunteer.name}":`, errMsg)
+                    console.error(`[Volunteer QR Email] Failed for Volunteer "${volunteer.name}":`, errMsg)
                     failed++
                     errors.push(`Volunteer "${volunteer.name}" (${recipientEmail}): ${errMsg}`)
                     break
@@ -196,7 +195,7 @@ export async function POST(request: NextRequest) {
         }
     }
 
-    const summary = `✅ Sent ${sent} QR email(s).${failed > 0 ? ` ❌ ${failed} failed.` : ''}${skipped > 0 ? ` ⏭️ ${skipped} skipped.` : ''}`
+    const summary = `Sent ${sent} QR email(s).${failed > 0 ? ` ${failed} failed.` : ''}${skipped > 0 ? ` ${skipped} skipped.` : ''}`
     console.log(`[Volunteer QR Email] SUMMARY: ${summary}`)
 
     return NextResponse.json({

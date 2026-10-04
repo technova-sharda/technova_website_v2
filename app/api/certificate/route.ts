@@ -163,7 +163,10 @@ function pdfResponse(pdfBytes: Uint8Array, fileName: string) {
     return new Response(arrayBuffer, {
         headers: {
             'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${fileName}"`
+            'Content-Disposition': `attachment; filename="${fileName}"`,
+            // Generating a PDF takes a second or two; repeat clicks within 15 min reuse
+            // the browser's copy (private: never stored by shared caches/CDNs).
+            'Cache-Control': 'private, max-age=900',
         }
     })
 }

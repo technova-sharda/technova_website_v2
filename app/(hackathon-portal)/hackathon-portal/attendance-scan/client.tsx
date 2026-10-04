@@ -296,7 +296,7 @@ export default function AttendanceScannerClient() {
                                                 disabled={processingId === a.qr_code || alreadyScanned}
                                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 ${alreadyScanned ? 'bg-emerald-600/20 text-emerald-400 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-500 text-gray-900'}`}
                                             >
-                                                {processingId === a.qr_code ? '...' : alreadyScanned ? '✓ Done' : 'Mark'}
+                                                {processingId === a.qr_code ? '...' : alreadyScanned ? 'Done' : 'Mark'}
                                             </button>
                                         </div>
                                     );

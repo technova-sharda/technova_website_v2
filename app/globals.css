@@ -361,9 +361,38 @@
 }
 
 /* Signal: Scan line sweep */
+/* transform instead of `top`: moving `top` made the browser lay out and repaint every frame */
 @keyframes scanline {
-  0% { top: -2px; }
-  100% { top: 100%; }
+  0% { transform: translateY(-2px); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Landing hero entrance. Plain CSS so it plays as soon as the page paints,
+   without waiting for JavaScript (framer's initial state kept the hero blank until hydration). */
+@keyframes hero-rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* TECHNOVA title: letters rise in, then a light band sweeps across every few seconds */
+@keyframes letter-rise {
+  from { opacity: 0; transform: translate3d(0, 0.32em, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes title-sheen {
+  0% { background-position: 160% 0; }
+  22%, 100% { background-position: -60% 0; }
+}
+@keyframes amber-breathe {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.08); }
+}
+@keyframes loading-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
 }
 
 /* ============================================
@@ -371,6 +400,14 @@
    ============================================ */
 
 @layer utilities {
+  /* Horizontal tab rows on phones: still scrollable, no visible bar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .glow-orb {
     animation: float 8s ease-in-out infinite;
   }
@@ -410,12 +447,16 @@
     animation: grain-shift 8s steps(10) infinite;
   }
 
+  /* will-change keeps the heavily blurred blobs on their own GPU layer, so
+     drifting them moves a cached texture instead of re-blurring every frame */
   .animate-mesh-drift {
     animation: mesh-drift 20s ease-in-out infinite;
+    will-change: transform;
   }
 
   .animate-mesh-drift-reverse {
     animation: mesh-drift-reverse 25s ease-in-out infinite;
+    will-change: transform;
   }
 
   .animate-float-shape {
@@ -424,6 +465,31 @@
 
   .animate-scanline {
     animation: scanline 8s linear infinite;
+    will-change: transform;
+  }
+
+  .letter-rise {
+    display: inline-block;
+    animation: letter-rise 0.8s cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  .title-sheen {
+    background-image: linear-gradient(100deg, transparent 40%, rgba(255, 200, 92, 0.95) 50%, transparent 60%);
+    background-size: 250% 100%;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: title-sheen 7s cubic-bezier(0.65, 0, 0.35, 1) 1.3s infinite both;
+  }
+  .amber-breathe {
+    animation: amber-breathe 4.5s ease-in-out 1s infinite both;
+    will-change: opacity, transform;
+  }
+  .hero-rise {
+    animation: hero-rise 0.9s cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  .hero-fade {
+    animation: hero-fade 1.4s ease-out both;
   }
 }
 
@@ -479,5 +545,15 @@
 
   .animate-scanline {
     animation: none;
+  }
+
+  .hero-rise,
+  .hero-fade,
+  .letter-rise,
+  .amber-breathe {
+    animation: none;
+  }
+  .title-sheen {
+    display: none;
   }
 }

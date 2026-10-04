@@ -61,9 +61,9 @@ function VerticalTimelineItem({ ev, now, isLast }: { ev: any, now: Date, isLast:
             </div>
 
             {/* Content */}
-            <div className={`flex flex-col pb-8 ${isPast ? 'opacity-50' : isFuture ? 'opacity-80' : 'opacity-100'} transition-opacity hover:opacity-100`}>
+            <div className={`flex-1 min-w-0 flex flex-col pb-8 ${isPast ? 'opacity-50' : isFuture ? 'opacity-80' : 'opacity-100'} transition-opacity hover:opacity-100`}>
                 <div className="flex items-baseline justify-between gap-4 mb-1">
-                    <h4 className={`text-base font-bold font-sans uppercase leading-tight ${isCurrent ? 'text-white' : 'text-white/80'}`}>{ev.title}</h4>
+                    <h4 className={`text-base font-bold font-sans uppercase leading-tight break-words min-w-0 ${isCurrent ? 'text-white' : 'text-white/80'}`}>{ev.title}</h4>
                     <span className={`text-[10px] whitespace-nowrap font-mono font-bold tracking-widest ${isCurrent ? 'text-[#00FF41]' : isFuture ? 'text-[#FF6B00]' : 'text-white/30'}`}>
                         {timeLeftStr}
                     </span>
@@ -71,7 +71,7 @@ function VerticalTimelineItem({ ev, now, isLast }: { ev: any, now: Date, isLast:
                 <div className="text-xs font-mono text-white/40 tracking-widest mb-1.5">
                     {format(start, "HH:mm")}
                 </div>
-                {ev.description && <p className="text-xs text-white/50 font-sans line-clamp-2 leading-relaxed">{ev.description}</p>}
+                {ev.description && <p className="text-xs text-white/50 font-sans line-clamp-2 leading-relaxed break-words">{ev.description}</p>}
             </div>
         </div>
     );
@@ -235,7 +235,7 @@ export default function LiveDashboardClient({
                         {[...Array(6)].map((_, i) => (
                             <span key={i} className="flex items-center">
                                 <span className="px-8 text-black flex items-center"><Megaphone className="inline-block w-6 h-6 mr-3" /> {initialSettings.active_announcement}</span>
-                                <span className="px-8 text-black/50">///</span>
+                                <span className="px-8 text-black/50">{'///'}</span>
                             </span>
                         ))}
                    </motion.div>
@@ -247,12 +247,12 @@ export default function LiveDashboardClient({
                 {/* ========================================================
                     LEFT COL: MASSIVE GLASSSMORPHIC TIMER 
                     ======================================================== */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
+                <div className="lg:col-span-8 flex flex-col gap-6 min-w-0">
                     <motion.div 
                         onMouseMove={handleMouseMove}
                         whileHover={{ scale: 1.01 }}
                         transition={{ duration: 0.3, ease: "easeOut" }}
-                        className="bg-[#03030F]/60 backdrop-blur-2xl p-8 md:p-14 rounded-[32px] border border-white/10 relative overflow-hidden group min-h-[450px] flex flex-col shadow-2xl"
+                        className="bg-[#03030F]/60 backdrop-blur-2xl p-5 md:p-14 rounded-[32px] border border-white/10 relative overflow-hidden group min-h-[450px] flex flex-col shadow-2xl"
                     >
                         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-multiply pointer-events-none z-0" />
                         
@@ -290,21 +290,21 @@ export default function LiveDashboardClient({
                         {/* GIANT COUNTDOWN */}
                         <div className="flex items-center gap-3 md:gap-8 justify-center relative z-10 mt-auto mb-auto w-full max-w-full drop-shadow-2xl">
                             <div className="flex flex-col items-center min-w-0">
-                                <span className={`text-[clamp(4.5rem,12vw,14rem)] font-black leading-none tracking-tighter ${urgency==='critical'?'text-red-500':'text-white'} ${glitchActive ? 'text-[#00FF41]' : ''}`}>
+                                <span className={`text-[clamp(2.6rem,12vw,14rem)] font-black leading-none tracking-tighter ${urgency==='critical'?'text-red-500':'text-white'} ${glitchActive ? 'text-[#00FF41]' : ''}`}>
                                     {glitchActive ? glitchText.hours : String(timeLeft.hours).padStart(2, '0')}
                                 </span>
                                 <span className={`text-white/30 tracking-[0.2em] md:tracking-[0.5em] text-[10px] md:text-xs font-bold uppercase mt-2 ${glitchActive ? 'text-[#00FF41]' : ''}`}>Hours</span>
                             </div>
-                            <span className={`text-[clamp(3.5rem,9vw,9rem)] leading-none mb-4 md:mb-8 font-light ${urgency==='critical'?'text-red-500/50 animate-pulse':'text-white/20'}`}>:</span>
+                            <span className={`text-[clamp(2rem,9vw,9rem)] leading-none mb-4 md:mb-8 font-light ${urgency==='critical'?'text-red-500/50 animate-pulse':'text-white/20'}`}>:</span>
                             <div className="flex flex-col items-center min-w-0">
-                                <span className={`text-[clamp(4.5rem,12vw,14rem)] font-black leading-none tracking-tighter ${urgency==='critical'?'text-red-500':'text-white'} ${glitchActive ? 'text-[#00FF41]' : ''}`}>
+                                <span className={`text-[clamp(2.6rem,12vw,14rem)] font-black leading-none tracking-tighter ${urgency==='critical'?'text-red-500':'text-white'} ${glitchActive ? 'text-[#00FF41]' : ''}`}>
                                     {glitchActive ? glitchText.minutes : String(timeLeft.minutes).padStart(2, '0')}
                                 </span>
                                 <span className={`text-white/30 tracking-[0.2em] md:tracking-[0.5em] text-[10px] md:text-xs font-bold uppercase mt-2 ${glitchActive ? 'text-[#00FF41]' : ''}`}>Minutes</span>
                             </div>
-                            <span className={`text-[clamp(3.5rem,9vw,9rem)] leading-none mb-4 md:mb-8 font-light ${urgency==='critical'?'text-red-500/50 animate-pulse':'text-white/20'}`}>:</span>
+                            <span className={`text-[clamp(2rem,9vw,9rem)] leading-none mb-4 md:mb-8 font-light ${urgency==='critical'?'text-red-500/50 animate-pulse':'text-white/20'}`}>:</span>
                             <div className="flex flex-col items-center min-w-0">
-                                <span className={`text-[clamp(4.5rem,12vw,14rem)] font-black leading-none tracking-tighter text-[#00FF41]`}>
+                                <span className={`text-[clamp(2.6rem,12vw,14rem)] font-black leading-none tracking-tighter text-[#00FF41]`}>
                                     {glitchActive ? glitchText.seconds : String(timeLeft.seconds).padStart(2, '0')}
                                 </span>
                                 <span className={`text-[#00FF41]/40 tracking-[0.2em] md:tracking-[0.5em] text-[10px] md:text-xs font-bold uppercase mt-2`}>Seconds</span>
@@ -379,7 +379,7 @@ export default function LiveDashboardClient({
                 {/* ========================================================
                     RIGHT COL: CONTEXT MODULAR CARDS 
                     ======================================================== */}
-                <div className="lg:col-span-4 flex flex-col gap-6 h-full">
+                <div className="lg:col-span-4 flex flex-col gap-6 h-full min-w-0">
                     
                     {/* CURRENT PHASE CARD */}
                     {initialSettings?.is_running && (
@@ -401,7 +401,7 @@ export default function LiveDashboardClient({
 
                     {/* EVENT FLOW TRACKER (VERTICAL) */}
                     {sortedSchedule.length > 0 && (
-                        <div className="bg-[#03030F]/60 backdrop-blur-xl border border-white/10 p-8 rounded-3xl flex-1 flex flex-col relative shadow-xl">
+                        <div className="bg-[#03030F]/60 backdrop-blur-xl border border-white/10 p-5 md:p-8 rounded-3xl flex-1 flex flex-col relative shadow-xl min-w-0">
                             <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10 z-10 relative mt-2">
                                 <div className="flex items-center gap-3">
                                     <Clock className="w-5 h-5 text-[#00FF41]" />

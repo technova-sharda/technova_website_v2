@@ -62,8 +62,8 @@ export const config = {
 
         if (user.email) {
           try {
-            const { getSupabase } = await import("@/lib/actions/hackathon")
-            const supabase = await getSupabase()
+            const { createAdminClient } = await import("@/lib/supabase/server")
+            const supabase = createAdminClient()
 
             // 1. Check custom hackathon_roles first
             const { data: customRole } = await supabase

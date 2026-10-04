@@ -1,6 +1,7 @@
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { createClient as createServerClient } from "@supabase/supabase-js"
 import { Calendar, Users, IndianRupee, Shield, TrendingUp, Activity, Crown, Star, Sparkles } from "lucide-react"
-import { ADMIN_EMAILS } from "@/lib/auth/role-utils"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 
@@ -21,8 +22,12 @@ async function getAdminStats() {
         totalRevenue += sponsorships.reduce((sum, s) => sum + s.amount, 0)
     }
 
-    // Count admins from ADMIN_EMAILS + 1 for technova@sharda.ac.in
-    const adminsCount = ADMIN_EMAILS.length + 1
+    // Real count of admins and super admins (managed on the Roles page)
+    const { count: adminsCount } = await supabase
+        .schema('next_auth')
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .in('role', ['admin', 'super_admin'])
 
     // Get recent events
     const { data: recentEvents } = await supabase
@@ -52,13 +57,17 @@ async function getAdminStats() {
         events: eventsCount || 0,
         registrations: registrationsCount || 0,
         revenue: totalRevenue,
-        scanners: adminsCount,
+        scanners: adminsCount || 0,
         clubs: clubsCount || 0,
         recentEvents: recentEvents || []
     }
 }
 
 export default async function AdminDashboardPage() {
+    // Own guard: the admin layout's check runs in parallel with this page, not before it
+    const session = await auth()
+    if (!session) redirect('/login')
+    if (session.user.role !== 'super_admin') return null // the layout shows its "Access restricted" message
     const stats = await getAdminStats()
 
     const statCards = [

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TeamPhoto } from "@/components/ui/team-photo"
 
 const clubs = [
     {
@@ -142,12 +143,7 @@ export function ClubsCarousel() {
                             >
                                 {/* Logo */}
                                 <div className="h-28 w-28 mb-6 relative flex items-center justify-center rounded-xl bg-white shadow-sm group-hover/card:shadow-md transition-shadow duration-300 overflow-hidden">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src={club.logo}
-                                        alt={club.name}
-                                        className="w-20 h-20 object-contain"
-                                    />
+                                    <span className="relative block w-20 h-20"><TeamPhoto src={club.logo} name={club.name} sizes="80px" className="object-contain" /></span>
                                 </div>
 
                                 <h3 className="text-xl font-heading font-bold mb-3 text-[var(--sig-text)] group-hover/card:text-[var(--sig-amber)] transition-colors duration-200">

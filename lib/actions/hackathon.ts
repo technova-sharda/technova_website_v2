@@ -10,7 +10,8 @@ import { headers } from "next/headers"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { fetchAllRows } from "@/lib/supabase/fetch-all"
 
-export async function getSupabase() {
+// Not exported: exports of a "use server" file are callable from the browser.
+async function getSupabase() {
     return createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -1275,7 +1276,9 @@ export async function getPublicShortlistedTeams() {
         .select(`
             id, name, idea_title, table_number, total_score
         `)
-        .ilike('status', '%shortlisted%')
+        // status is an enum, so ILIKE errored ("operator does not exist") and the public
+        // shortlist was always empty. It would also have matched 'not_shortlisted'.
+        .eq('status', 'shortlisted')
         .order('total_score', { ascending: false })
 
     if (error) {
@@ -1318,11 +1321,11 @@ export async function emailShortlistedTeams() {
                 await sendEmailOrThrow(resend, {
                     from: "Technova Society <no-reply@technovashardauniversity.in>",
                     to: participant.email,
-                    subject: "🎉 Congratulations! Your Team has been Shortlisted - CodeMania Hackathon",
+                    subject: "Congratulations! Your Team has been Shortlisted - CodeMania Hackathon",
                     html: `
                         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #000; color: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #333;">
                             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
-                                <h1 style="margin: 0; color: #fff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">🎉 Congratulations!</h1>
+                                <h1 style="margin: 0; color: #fff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Congratulations!</h1>
                                 <p style="margin: 5px 0 0; color: rgba(255,255,255,0.9); font-weight: bold;">CodeMania Hackathon</p>
                             </div>
                             <div style="padding: 40px 30px; line-height: 1.6;">
@@ -1339,7 +1342,7 @@ export async function emailShortlistedTeams() {
                                 </div>
 
                                 <div style="background-color: #0a2e1e; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
-                                    <p style="margin: 0; color: #10b981; font-size: 18px; font-weight: bold;">🏆 You're in the Grand Finale!</p>
+                                    <p style="margin: 0; color: #10b981; font-size: 18px; font-weight: bold;">You're in the Grand Finale!</p>
                                     <p style="margin: 10px 0 0; color: #aaa; font-size: 14px;">
                                         The 24-Hour Offline Hackathon awaits you at Sharda University. More details about the event schedule, venue, and logistics will be shared soon.
                                     </p>
@@ -1376,7 +1379,7 @@ export async function emailShortlistedTeams() {
 
     revalidatePath('/hackathon-portal/manage')
     revalidatePath('/hackathon')
-    return { success: true, message: `✅ Emails sent to ${sentCount} participant(s) across ${teams.length} team(s).${failCount > 0 ? ` ${failCount} failed.` : ''}` }
+    return { success: true, message: `Emails sent to ${sentCount} participant(s) across ${teams.length} team(s).${failCount > 0 ? ` ${failCount} failed.` : ''}` }
 }
 
 export async function emailSingleTeam(teamId: string) {
@@ -1410,11 +1413,11 @@ export async function emailSingleTeam(teamId: string) {
             await sendEmailOrThrow(resend, {
                 from: "Technova Society <no-reply@technovashardauniversity.in>",
                 to: participant.email,
-                subject: "🎉 Congratulations! Your Team has been Shortlisted - CodeMania Hackathon",
+                subject: "Congratulations! Your Team has been Shortlisted - CodeMania Hackathon",
                 html: `
                     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #000; color: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #333;">
                         <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #fff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">🎉 Congratulations!</h1>
+                            <h1 style="margin: 0; color: #fff; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Congratulations!</h1>
                             <p style="margin: 5px 0 0; color: rgba(255,255,255,0.9); font-weight: bold;">CodeMania Hackathon</p>
                         </div>
                         <div style="padding: 40px 30px; line-height: 1.6;">
@@ -1429,7 +1432,7 @@ export async function emailSingleTeam(teamId: string) {
                                 <p style="margin: 5px 0 0; font-size: 14px; color: #aaa;"><strong>Project:</strong> ${team.idea_title || 'N/A'}</p>
                             </div>
                             <div style="background-color: #0a2e1e; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
-                                <p style="margin: 0; color: #10b981; font-size: 18px; font-weight: bold;">🏆 You're in the Grand Finale!</p>
+                                <p style="margin: 0; color: #10b981; font-size: 18px; font-weight: bold;">You're in the Grand Finale!</p>
                                 <p style="margin: 10px 0 0; color: #aaa; font-size: 14px;">
                                     The 24-Hour Offline Hackathon awaits you at Sharda University. More details about the event schedule, venue, and logistics will be shared soon.
                                 </p>
@@ -1474,7 +1477,7 @@ export async function emailSingleTeam(teamId: string) {
 
     return {
         success: true,
-        message: `✉️ Sent to ${sentTo.length} of ${emails.length} participant(s) for team "${team.name}".${failedTo.length > 0 ? ` ${failedTo.length} failed.` : ''}`,
+        message: `Sent to ${sentTo.length} of ${emails.length} participant(s) for team "${team.name}".${failedTo.length > 0 ? ` ${failedTo.length} failed.` : ''}`,
         sentTo,
         failedTo,
         teamName: team.name
@@ -1555,7 +1558,7 @@ export async function blastCustomEmail(subject: string, htmlBody: string, target
                                     <tr>
                                         <td style="background: linear-gradient(135deg, #f97316, #10b981); padding:32px 40px; text-align:center;">
                                             <h1 style="margin:0; color:#fff; font-size:26px; font-weight:800; letter-spacing:-0.5px; text-transform: uppercase;">
-                                                🚀 CodeMania Hackathon
+                                                CodeMania Hackathon
                                             </h1>
                                             <p style="margin:8px 0 0; color:rgba(255,255,255,0.9); font-size:14px; font-weight:600; font-family: monospace; letter-spacing: 2px;">
                                                 BY TECHNOVA SOCIETY
@@ -1597,7 +1600,7 @@ export async function blastCustomEmail(subject: string, htmlBody: string, target
         }
     }
 
-    return { success: true, message: `✅ Sent to ${sentCount} recipient(s).${failCount > 0 ? ` ${failCount} failed.` : ''}` }
+    return { success: true, message: `Sent to ${sentCount} recipient(s).${failCount > 0 ? ` ${failCount} failed.` : ''}` }
 }
 // ==========================================
 // LOGISTICS & QR ACTIONS
@@ -1661,7 +1664,7 @@ export async function processHackathonQrScan(participantId: string, actionUrl: '
 
         if (error) return { error: error.message }
         revalidatePath('/admin/hackathon')
-        return { success: true, participant: qrTarget, message: `✅ ${qrTarget.name} — Checked in successfully` }
+        return { success: true, participant: qrTarget, message: `${qrTarget.name} — Checked in successfully` }
     }
 
     if (actionUrl === 'checkout') {
@@ -1674,7 +1677,7 @@ export async function processHackathonQrScan(participantId: string, actionUrl: '
 
         if (error) return { error: error.message }
         revalidatePath('/admin/hackathon')
-        return { success: true, participant: qrTarget, message: `👋 ${qrTarget.name} — Checked out successfully` }
+        return { success: true, participant: qrTarget, message: `${qrTarget.name} — Checked out successfully` }
     }
 
     if (actionUrl === 'food') {
@@ -1724,7 +1727,7 @@ export async function processHackathonQrScan(participantId: string, actionUrl: '
 
         if (updateError) return { error: updateError.message }
 
-        return { success: true, participant: qrTarget, message: `✅ ${qrTarget.name} — "${mealType}" logged! (Total meals: ${(qrTarget.food_count || 0) + 1})` }
+        return { success: true, participant: qrTarget, message: `${qrTarget.name} — "${mealType}" logged! (Total meals: ${(qrTarget.food_count || 0) + 1})` }
     }
 
     if (actionUrl === 'food_unlog') {
@@ -2119,7 +2122,7 @@ export async function uploadVolunteersData(formData: FormData) {
         }
 
         revalidatePath('/hackathon-portal')
-        return { success: true, message: `✅ Uploaded ${insertedCount} volunteer(s). ${skippedCount > 0 ? `${skippedCount} skipped.` : ''}` }
+        return { success: true, message: `Uploaded ${insertedCount} volunteer(s). ${skippedCount > 0 ? `${skippedCount} skipped.` : ''}` }
     } catch (err: any) {
         return { error: err.message || "Failed to process file" }
     }
@@ -2183,7 +2186,7 @@ export async function processVolunteerQrScan(volunteerId: string, action: 'check
             .update({ is_checked_in: true, check_in_time: new Date().toISOString() })
             .eq('id', volunteerId)
         if (error) return { error: error.message }
-        return { success: true, volunteer, message: `✅ ${volunteer.name} — Checked in successfully` }
+        return { success: true, volunteer, message: `${volunteer.name} — Checked in successfully` }
     }
 
     if (action === 'checkout') {
@@ -2193,7 +2196,7 @@ export async function processVolunteerQrScan(volunteerId: string, action: 'check
             .update({ is_checked_in: false })
             .eq('id', volunteerId)
         if (error) return { error: error.message }
-        return { success: true, volunteer, message: `👋 ${volunteer.name} — Checked out successfully` }
+        return { success: true, volunteer, message: `${volunteer.name} — Checked out successfully` }
     }
 
     return { error: "Invalid action" }
@@ -2468,11 +2471,11 @@ export async function sendAttendeeQrEmails(eventTag: string, eventName: string =
             await sendEmailOrThrow(resend, {
                 from: "Technova Society <no-reply@technovashardauniversity.in>",
                 to: attendee.email,
-                subject: `🎫 Your Attendance QR Code — ${eventName}`,
+                subject: `Your Attendance QR Code — ${eventName}`,
                 html: `
                     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #000; color: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #333;">
                         <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #fff; font-size: 22px; letter-spacing: 1px;">🎫 Your Attendance QR</h1>
+                            <h1 style="margin: 0; color: #fff; font-size: 22px; letter-spacing: 1px;">Your Attendance QR</h1>
                             <p style="margin: 5px 0 0; color: rgba(255,255,255,0.9); font-weight: bold;">${eventName}</p>
                         </div>
                         <div style="padding: 30px; text-align: center; line-height: 1.6;">
@@ -2490,7 +2493,7 @@ export async function sendAttendeeQrEmails(eventTag: string, eventName: string =
                                 ${attendee.department ? `<p style="margin: 3px 0 0; color: #aaa; font-size: 13px;">${attendee.department}${attendee.section ? ` — Section ${attendee.section}` : ''}</p>` : ''}
                             </div>
                             <div style="margin: 20px auto; text-align: center;">
-                                <a href="${baseUrl}/attendance/register" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 12px 30px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 14px;">📝 Complete Your Registration</a>
+                                <a href="${baseUrl}/attendance/register" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 12px 30px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 14px;">Complete Your Registration</a>
                                 <p style="color: #888; font-size: 12px; margin-top: 8px;">Fill in your System ID, Section, Department &amp; Year</p>
                             </div>
                             <p style="color: #666; font-size: 12px; margin-top: 20px;">
@@ -2522,7 +2525,7 @@ export async function sendAttendeeQrEmails(eventTag: string, eventName: string =
         sent,
         failed: failedEmails.length,
         failedEmails,
-        message: `✅ Sent ${sent} QR emails.${failedEmails.length > 0 ? ` ${failedEmails.length} failed — retry these.` : ''}`
+        message: `Sent ${sent} QR emails.${failedEmails.length > 0 ? ` ${failedEmails.length} failed — retry these.` : ''}`
     }
 }
 
@@ -2568,7 +2571,7 @@ export async function processAttendanceScan(qrCode: string, checkpoint: string) 
     return {
         success: true,
         attendee,
-        message: `✅ ${attendee.name} — ${checkpoint} recorded${attendee.system_id ? ` (${attendee.system_id})` : ''}`
+        message: `${attendee.name} — ${checkpoint} recorded${attendee.system_id ? ` (${attendee.system_id})` : ''}`
     }
 }
 
@@ -2837,7 +2840,7 @@ export async function processGateScan(participantId: string) {
         }
     }
 
-    const dirLabel = direction === 'exit' ? '🟠 EXIT' : '🟢 ENTRY'
+    const dirLabel = direction === 'exit' ? 'EXIT' : 'ENTRY'
 
     return {
         success: true,

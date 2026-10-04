@@ -1,4 +1,5 @@
 import { headers } from "next/headers"
+import { issueTicketAfterPayment } from "@/lib/server/tickets"
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 
@@ -71,11 +72,21 @@ export async function POST(req: Request) {
             return new Response("Amount mismatch", { status: 200 })
         }
 
-        await supabase
+        const { data: flipped } = await supabase
             .from("registrations")
             .update({ payment_status: "paid" })
             .eq("id", reg.id)
             .eq("payment_status", "pending")
+            .select("id")
+
+        // Only the delivery that actually marked it paid sends the ticket (no duplicates on retries)
+        if (flipped?.length) {
+            try {
+                await issueTicketAfterPayment(reg.id)
+            } catch (e) {
+                console.error("Ticket after payment failed:", e)
+            }
+        }
     }
 
     return new Response("OK", { status: 200 })

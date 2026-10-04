@@ -40,9 +40,9 @@ function ProfilePopup({ onClose }: { onClose: () => void }) {
                             <X className="w-5 h-5" />
                         </button>
 
-                        {/* Emoji + Header */}
+                        {/* Icon + Header */}
                         <div className="text-center mb-6">
-                            <div className="text-5xl mb-4">🚀</div>
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center"><Rocket className="w-8 h-8 text-purple-300" /></div>
                             <h2 className="text-2xl font-black text-white mb-2">
                                 Complete Your Profile!
                             </h2>
@@ -170,7 +170,7 @@ function BuddyFinderContent() {
             {/* Profile Completion Popup */}
             {showPopup && <ProfilePopup onClose={handleClosePopup} />}
             {/* Hero Section */}
-            <section className="relative py-20 overflow-hidden">
+            <section className="relative py-12 md:py-20 overflow-hidden">
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black" />
                 <div className="absolute top-1/2 right-1/4 w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[120px]" />
@@ -319,8 +319,8 @@ function BuddyFinderContent() {
                                 }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-sm font-medium hover:bg-emerald-500/30 transition-colors"
                             >
-                                🤝 Looking for Team
-                                <span className="ml-1 text-emerald-300 hover:text-white">✕</span>
+                                <Handshake className="w-4 h-4" /> Looking for Team
+                                <X className="ml-1 w-3.5 h-3.5 text-emerald-300 hover:text-white" />
                             </button>
                         </motion.div>
                     )}

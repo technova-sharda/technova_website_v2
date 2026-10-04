@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Search, Save, CheckCircle2, AlertTriangle, Users, Edit3, Mail, ChevronRight, Loader2, Shield, Eye, GraduationCap, Phone, MapPin, CalendarDays, BedDouble} from 'lucide-react'
+import { ArrowLeft, Search, Save, CheckCircle2, AlertTriangle, Users, Edit3, Mail, ChevronRight, Loader2, Shield, Eye, GraduationCap, Phone, MapPin, CalendarDays, BedDouble, Star } from 'lucide-react'
 import Link from 'next/link'
 
 interface Member {
@@ -377,7 +377,7 @@ export default function TeamUpdatePage() {
                                         <div key={i} className="flex flex-col md:flex-row md:items-center justify-between bg-white/[0.03] p-4 rounded-xl border border-white/5">
                                             <div>
                                                 <div className="font-bold text-white flex items-center gap-2">
-                                                    {m.role?.toLowerCase() === 'leader' ? <span className="text-amber-500">★</span> : null}
+                                                    {m.role?.toLowerCase() === 'leader' ? <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> : null}
                                                     {m.name || 'Unnamed Participant'}
                                                     <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${m.role?.toLowerCase() === 'leader' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'bg-white/10 text-white/40'}`}>{m.role}</span>
                                                 </div>

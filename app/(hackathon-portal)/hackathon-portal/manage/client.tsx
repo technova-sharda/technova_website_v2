@@ -18,7 +18,7 @@ import {
     getGateLogs
 } from "@/lib/actions/hackathon";
 import * as XLSX from "xlsx";
-import { Download, Upload, Users, AlertCircle, CheckCircle, Search, Trash2, Mail, ExternalLink, RefreshCw, Save, Edit2, X, FileDown, Cpu, Clock, Calendar, QrCode, StopCircle, Star, UserCheck, Plus, ChevronLeft, ChevronRight, Edit, Shield, Utensils, Settings, Send, Minus, MapPin, DoorOpen } from "lucide-react";
+import { Download, Upload, Users, AlertCircle, CheckCircle, Search, Trash2, Mail, ExternalLink, RefreshCw, Save, Edit2, X, FileDown, Cpu, Clock, Calendar, QrCode, StopCircle, Star, UserCheck, Plus, ChevronLeft, ChevronRight, Edit, Shield, Utensils, Settings, Send, Minus, MapPin, DoorOpen, AlertTriangle, FolderUp, Check } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import LiveTimer from "../components/LiveTimer";
@@ -250,7 +250,7 @@ export default function HackathonManageClient() {
             };
             attCheckpoints.forEach(cp => {
                 const scan = a.event_attendance_scans?.find((s: any) => s.checkpoint === cp);
-                row[`${cp}`] = scan ? '✓' : '✗';
+                row[`${cp}`] = scan ? 'Yes' : 'No';
                 row[`${cp} Time`] = scan ? new Date(scan.scanned_at).toLocaleString() : '';
             });
             return row;
@@ -393,7 +393,7 @@ export default function HackathonManageClient() {
     };
 
     const handleDeleteAllTeams = async () => {
-        if (!confirm("🚨 WARNING 🚨\n\nThis will permanently delete ALL teams, evaluations, and participants from this hackathon. This cannot be undone.\n\nAre you absolutely sure you want to proceed?")) return;
+        if (!confirm("WARNING\n\nThis will permanently delete ALL teams, evaluations, and participants from this hackathon. This cannot be undone.\n\nAre you absolutely sure you want to proceed?")) return;
 
         setDeletingTeams(true);
         setMessage(null);
@@ -738,7 +738,7 @@ export default function HackathonManageClient() {
                     <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <p className="text-sm font-medium">⚠️ Some emails failed for this team</p>
+                                <p className="text-sm font-medium flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> Some emails failed for this team</p>
                                 <p className="text-xs text-amber-600 mt-1">Failed: {mailResult.failedTo.join(', ')}</p>
                                 {mailResult.sentTo.length > 0 && <p className="text-xs text-emerald-600 mt-0.5">Succeeded: {mailResult.sentTo.join(', ')}</p>}
                             </div>
@@ -878,10 +878,10 @@ export default function HackathonManageClient() {
                                 }} className="flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 px-3 py-2 rounded-xl text-sm transition-colors">
                                     <Download className="w-3.5 h-3.5" /> Export CSV
                                 </button>
-                                <button onClick={async () => { if (!confirm(`This will email QR codes to all teams that haven't been emailed yet. Continue?`)) return; setMessage({ type: 'success', text: '📧 Sending QR code emails...' }); try { const res = await fetch('/api/admin/hackathon-qr-emails', { method: 'POST' }); const data = await res.json(); if (data.error) setMessage({ type: 'error', text: data.error }); else setMessage({ type: data.failed > 0 ? 'error' : 'success', text: data.message || `QR codes emailed! ${data.sent} sent, ${data.failed} failed, ${data.skipped} skipped.` }); loadData(); } catch (err: any) { setMessage({ type: 'error', text: err.message || 'Failed to send QR emails.' }); } }} className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 px-3 py-2 rounded-xl text-sm transition-colors">
+                                <button onClick={async () => { if (!confirm(`This will email QR codes to all teams that haven't been emailed yet. Continue?`)) return; setMessage({ type: 'success', text: 'Sending QR code emails...' }); try { const res = await fetch('/api/admin/hackathon-qr-emails', { method: 'POST' }); const data = await res.json(); if (data.error) setMessage({ type: 'error', text: data.error }); else setMessage({ type: data.failed > 0 ? 'error' : 'success', text: data.message || `QR codes emailed! ${data.sent} sent, ${data.failed} failed, ${data.skipped} skipped.` }); loadData(); } catch (err: any) { setMessage({ type: 'error', text: err.message || 'Failed to send QR emails.' }); } }} className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 px-3 py-2 rounded-xl text-sm transition-colors">
                                     <Mail className="w-3.5 h-3.5" /> Send QR Codes
                                 </button>
-                                <button onClick={async () => { if (!confirm(`⚠️ This will RE-SEND QR codes to ALL teams, including those already emailed. Continue?`)) return; setMessage({ type: 'success', text: '📧 Resending QR codes to ALL teams...' }); try { const res = await fetch('/api/admin/hackathon-qr-emails?resend=true', { method: 'POST' }); const data = await res.json(); if (data.error) setMessage({ type: 'error', text: data.error }); else setMessage({ type: data.failed > 0 ? 'error' : 'success', text: data.message || `QR codes re-sent! ${data.sent} sent, ${data.failed} failed.` }); loadData(); } catch (err: any) { setMessage({ type: 'error', text: err.message || 'Failed to send QR emails.' }); } }} className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 px-3 py-2 rounded-xl text-sm transition-colors">
+                                <button onClick={async () => { if (!confirm(`This will RE-SEND QR codes to ALL teams, including those already emailed. Continue?`)) return; setMessage({ type: 'success', text: 'Resending QR codes to ALL teams...' }); try { const res = await fetch('/api/admin/hackathon-qr-emails?resend=true', { method: 'POST' }); const data = await res.json(); if (data.error) setMessage({ type: 'error', text: data.error }); else setMessage({ type: data.failed > 0 ? 'error' : 'success', text: data.message || `QR codes re-sent! ${data.sent} sent, ${data.failed} failed.` }); loadData(); } catch (err: any) { setMessage({ type: 'error', text: err.message || 'Failed to send QR emails.' }); } }} className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 px-3 py-2 rounded-xl text-sm transition-colors">
                                     <RefreshCw className="w-3.5 h-3.5" /> Resend All
                                 </button>
                                 <button onClick={() => setShowManualAdd(true)} className="flex items-center gap-1.5 bg-emerald-500 hover:bg-white text-black font-black uppercase tracking-widest transition-all hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] text-gray-900 px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-none">
@@ -937,7 +937,7 @@ export default function HackathonManageClient() {
                                                             <button 
                                                                 onClick={async () => {
                                                                     if (!confirm(`Send QR Code to team ${team.name}?`)) return;
-                                                                    setMessage({ type: 'success', text: `📧 Sending QR to ${team.name}...` });
+                                                                    setMessage({ type: 'success', text: `Sending QR to ${team.name}...` });
                                                                     try {
                                                                         // Pass resend=true so we can resend to failed/single teams even if marked emailed
                                                                         const res = await fetch('/api/admin/hackathon-qr-emails?resend=true', {
@@ -1367,7 +1367,7 @@ export default function HackathonManageClient() {
 
                             {/* Bulk Upload */}
                             <div className="mt-6 p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl shadow-sm">
-                                <p className="text-sm text-violet-400 font-bold mb-1">📁 Bulk Upload Volunteers</p>
+                                <p className="text-sm text-violet-400 font-bold mb-1 flex items-center gap-1.5"><FolderUp className="w-4 h-4" /> Bulk Upload Volunteers</p>
                                 <p className="text-xs text-gray-500 font-mono tracking-wider mb-3">Upload an Excel file with columns: S.No, Name, Role, System ID, Section, Year, Mobile Number, Department, Email</p>
                                 <form onSubmit={async (e) => {
                                     e.preventDefault();
@@ -1563,7 +1563,7 @@ export default function HackathonManageClient() {
                             <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
                                 <Utensils className="w-4 h-4 text-orange-400" /> Verify & Track Custom Meals
                             </h3>
-                            <p className="text-xs text-gray-500 font-mono tracking-wider mb-6">Define exactly which meals food volunteers can scan and distribute. This syncs directly to all volunteers' Verify & Track dropdowns.</p>
+                            <p className="text-xs text-gray-500 font-mono tracking-wider mb-6">Define exactly which meals food volunteers can scan and distribute. This syncs directly to all volunteers&apos; Verify & Track dropdowns.</p>
 
                             <div className="space-y-3 mb-6">
                                 {customMeals.map((meal, idx) => (
@@ -2109,13 +2109,13 @@ export default function HackathonManageClient() {
                                                             {isEditing ? <input value={editAttendeeFormData.email || ''} onChange={e => setEditAttendeeFormData({ ...editAttendeeFormData, email: e.target.value })} className="w-full text-xs p-1 border rounded" /> : (a.email || '—')}
                                                         </td>
                                                         <td className="px-3 py-2 text-center">
-                                                            {a.qr_emailed ? <span className="text-emerald-500 text-xs font-bold">✓</span> : <span className="text-gray-300 text-xs">✗</span>}
+                                                            {a.qr_emailed ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <X className="w-3.5 h-3.5 text-gray-300" />}
                                                         </td>
                                                         {attCheckpoints.map(cp => {
                                                             const scan = a.event_attendance_scans?.find((s: any) => s.checkpoint === cp);
                                                             return (
                                                                 <td key={cp} className="px-3 py-2 text-center">
-                                                                    {scan ? <span className="text-emerald-500 text-xs font-bold" title={new Date(scan.scanned_at).toLocaleString()}>✓</span> : <span className="text-gray-300 text-xs">✗</span>}
+                                                                    {scan ? <span className="text-emerald-500 text-xs font-bold" title={new Date(scan.scanned_at).toLocaleString()}><Check className="w-3.5 h-3.5 inline" /></span> : <X className="w-3.5 h-3.5 text-gray-300" />}
                                                                 </td>
                                                             );
                                                         })}

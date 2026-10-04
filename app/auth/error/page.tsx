@@ -8,6 +8,14 @@ function ErrorContent() {
     const searchParams = useSearchParams()
     const error = searchParams?.get("error")
     const [mounted, setMounted] = useState(false)
+    // Random positions are picked once; computing them during render made the
+    // particles jump to new places on every re-render.
+    const [particles] = useState(() => Array.from({ length: 20 }, () => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        delay: Math.random() * 3,
+        duration: 2 + Math.random() * 4,
+    })))
 
     useEffect(() => {
         setMounted(true)
@@ -26,15 +34,15 @@ function ErrorContent() {
                             : 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)'
                     }} />
                 {/* Floating particles */}
-                {mounted && Array.from({ length: 20 }).map((_, i) => (
+                {mounted && particles.map((p, i) => (
                     <div key={i}
                         className="absolute w-1 h-1 rounded-full animate-pulse"
                         style={{
                             backgroundColor: isAccessDenied ? 'rgba(239,68,68,0.3)' : 'rgba(99,102,241,0.3)',
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animationDelay: `${Math.random() * 3}s`,
-                            animationDuration: `${2 + Math.random() * 4}s`,
+                            left: `${p.left}%`,
+                            top: `${p.top}%`,
+                            animationDelay: `${p.delay}s`,
+                            animationDuration: `${p.duration}s`,
                         }} />
                 ))}
                 {/* Grid pattern */}

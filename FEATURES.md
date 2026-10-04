@@ -8,6 +8,56 @@
 
 ---
 
+## 0. Revised plan (4 Oct): students first, no database changes
+
+You set two rules on 4 Oct: **students come first** (speed, phones, usefulness), and **the database is not changed**: no new tables, columns, views or roles. Everything below works on the tables that exist today. Features in the older plan that need new tables (Clubs manager photos/order, Audit log, Access & roles, Waitlist, the `analytics` schema) are **parked**.
+
+### Phase 1: for students (≈1 week)
+| # | Feature | What students get | Effort |
+|---|---|---|---|
+| F1 | **Add to calendar** | "Google Calendar" and ".ics" buttons on every event page and in the confirmation email. Fewer no-shows, and it partly covers the missing reminders (D3) | ½ d |
+| F2 | **Install as an app (PWA)** | "Add to Home Screen", with the QR ticket and "My events" available offline at the venue gate, where campus Wi-Fi is weak | 1 d |
+| F3 | **Event search & filters** | Search box plus club / upcoming / online filters on `/events` | ½ d |
+| F4 | **Share buttons** | WhatsApp / copy-link on events, with the student's referral code already attached (referral XP exists) | ½ d |
+| F5 | **Certificate → LinkedIn** | "Add to LinkedIn profile" button on each certificate, pointing at the existing `/verify` page | ½ d |
+| F6 | **"My events" on the dashboard** | Upcoming registrations with ticket QR, past ones with certificate and feedback links, all in one place | 1 d |
+
+### Phase 2: for the team running events (≈1.5 weeks)
+| # | Feature | What it does | Effort |
+|---|---|---|---|
+| F7 | **Bulk attendance** | Upload the Google Meet/Zoom attendance CSV or tick students → marked attended → XP and certificate eligibility. Uses existing columns. Fixes D8 (Start2Code shows 0 of 171) | 2 d |
+| F8 | **People search** | Look up any student: events registered/attended, XP history, certificates. Read-only | 2 d |
+| F9 | **Event report PDF** | One click → branded PDF for HOD/Dean: registrations, turnout, year/course split, feedback ratings. Read-only, built with pdf-lib (already used) | 2–3 d |
+| F10 | **Certificates hub** | All events' certificates in one place: who hasn't received theirs, resend failed emails, "send a test to me" first | 2 d |
+
+### Phase 3: insights (≈2 weeks)
+| # | Feature | What it does | Effort |
+|---|---|---|---|
+| F11 | **Analytics dashboard** | Ready-made charts (turnout trend, per-club comparison, year/course split, per-event funnel), computed in code with read-only queries | 3 d |
+| F12 | **Ask Technova (AI)** | Plain-English questions → answer + chart, on the **NVIDIA free API**. Without the planned read-only database role, it **must not write SQL**: it picks from a fixed list of safe, read-only queries in code (details in §5) | 4–5 d |
+| F13 | **Feedback summaries (AI)** | After feedback closes, NVIDIA model summarises the comments into top praise / complaints per event | 1–2 d |
+
+**Suggested start:** F1 → F3 → F6 → F7. They're small, students notice them immediately, and F7 fixes a real data gap.
+
+### Progress (4 Oct)
+- [x] **F1** Add to calendar: Google + .ics on event pages, in the ticket email and on the dashboard. Multi-day events repeat daily at their daily hours.
+- [x] **F2** Install as an app: web manifest, icons and theme colour. *(Offline ticket not done: a service worker could serve stale pages, so it was left out.)*
+- [x] **F3** Event search, club filter, Online / On campus, plus "Show all past events" (the list used to stop at 6).
+- [x] **F4** Share: WhatsApp / copy link / native share on every event page; WhatsApp added to "Share & Earn XP".
+- [x] **F5** "Add to LinkedIn" on every certificate.
+- [x] **F6** Real dashboard: XP, rank, attended, certificates, my upcoming events (ticket + calendar), open events, past events with certificates.
+- [x] **F7** Bulk attendance: `/admin/events/[id]/attendance`. Upload a Meet/Zoom CSV or paste a list (matched by email or system ID, never by name), preview, then mark. Per day for multi-day events, same XP as a QR scan, no double awards.
+- [x] **F8** People search: `/admin/people`.
+- [x] **Admin Roles** page (`/admin/roles`, super admins only): make anyone Super Admin / Admin (scanner) / Student, with confirmation, no self-change, never zero super admins, and a change history.
+- [x] **F9** Event report PDF: "Event Report" on each event's admin page (and in Analytics). Branded A4: KPIs, registrations over time, audience by year/course, ratings, and an AI-written summary from the totals.
+- [x] **F10** Certificates hub: `/admin/certificates`. Totals, per-event status (valid / not emailed / pending / revoked / downloads), search by certificate ID or student, and past events still missing certificates or attendance.
+- [x] **F11** Analytics: `/admin/analytics`. KPIs, monthly activity, year and course mix, clubs compared, ratings, repeat participation, XP spread, and a sortable table of every event. Built on one anonymous dataset (`lib/analytics/`).
+- [x] **F12** Ask Technova: `/admin/insights` (super admins). NVIDIA Nemotron 3 Super with a fallback model. **No SQL and no database access for the AI:** it calls 8 fixed read-only tools over the anonymous dataset, and charts are filled from tool results on the server. 40 questions/hour per admin.
+- [x] **F13** Feedback summaries: "Summarise comments" in each event's feedback section. Only long-answer comments are sent (emails/numbers redacted), grouped into praise, complaints and suggestions.
+- [ ] Offline ticket in the installed app (needs a service worker; left out on purpose).
+
+---
+
 ## 1. Where the admin panel is today
 
 | Sidebar item | What it does | Gaps |

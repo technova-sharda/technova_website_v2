@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { submitBugReport, type BugReportSubmission } from '@/lib/actions/bug-reports'
-import { Bug, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Bug, Loader2, CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
 
 export default function BugReportForm() {
     const [formData, setFormData] = useState<BugReportSubmission>({
@@ -143,8 +143,8 @@ export default function BugReportForm() {
                                     {result.message}
                                 </p>
                                 {result.xp && result.xp > 0 && (
-                                    <p className="text-sm text-green-400 font-semibold mt-1">
-                                        +{result.xp} XP earned! 🎉
+                                    <p className="text-sm text-green-400 font-semibold mt-1 flex items-center gap-1.5">
+                                        <Sparkles className="w-4 h-4" /> +{result.xp} XP earned!
                                     </p>
                                 )}
                             </div>

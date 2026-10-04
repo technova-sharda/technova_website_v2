@@ -7,7 +7,7 @@ import { AnimatePresence, MotionConfig, animate, motion, useMotionValue, useTran
 import {
     ArrowLeft, Download, Search, CheckCircle, XCircle, Clock, Loader2, X, Award, Send, Mail,
     ChevronLeft, ChevronRight, Users, UserCheck, IndianRupee, CalendarDays, MessageSquare,
-    Lock, LockOpen,
+    Lock, LockOpen, FileDown,
 } from "lucide-react"
 import { Toast, useToast } from "@/components/ui/toast"
 import { togglePastEvent, setRegistrationsClosed as setEventRegistrationsClosed } from "@/lib/actions/events"
@@ -258,6 +258,19 @@ export function AdminEventClient({ event, registrations }: { event: any, registr
                         >
                             <Award className="w-4 h-4" /> Certificates
                         </Link>
+                        <Link
+                            href={`/admin/events/${event.id}/attendance`}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 text-sm font-medium transition-colors"
+                        >
+                            <UserCheck className="w-4 h-4" /> Bulk Attendance
+                        </Link>
+                        <a
+                            href={`/api/admin/events/${event.id}/report?ai=1`}
+                            className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/10 text-white rounded-lg hover:bg-zinc-800 text-sm font-medium transition-colors"
+                            title="Branded PDF for the HOD/Dean: registrations, turnout, audience, ratings and an AI-written summary"
+                        >
+                            <FileDown className="w-4 h-4" /> Event Report
+                        </a>
                         <button
                             onClick={() => setShowBlastModal(true)}
                             className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/10 text-white rounded-lg hover:bg-zinc-800 text-sm font-medium transition-colors"

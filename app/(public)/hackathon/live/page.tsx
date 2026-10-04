@@ -4,29 +4,9 @@ import { useEffect, useState } from 'react'
 import LiveDashboardClient from '@/app/(public)/live/live-dashboard'
 import { motion } from 'framer-motion'
 import { Terminal } from 'lucide-react'
-import { HackathonPreloader } from '@/components/ui/hackathon-preloader'
 
 export default function HackathonLivePage() {
     const [liveData, setLiveData] = useState<{ settings: any; schedule: any[]; shortlistedTeams: any[] } | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [progress, setProgress] = useState(0)
-
-    useEffect(() => {
-        // Cyber Loader Sequence
-        const interval = setInterval(() => {
-            setProgress(p => {
-                if (p >= 100) {
-                    clearInterval(interval)
-                    setTimeout(() => setIsLoading(false), 500)
-                    return 100
-                }
-                return p + Math.floor(Math.random() * 15) + 5
-            })
-        }, 150)
-
-        return () => clearInterval(interval)
-    }, [])
-
     useEffect(() => {
         async function fetchLiveData() {
             try {
@@ -44,7 +24,6 @@ export default function HackathonLivePage() {
         return () => clearInterval(liveInterval)
     }, [])
 
-    if (isLoading) return <HackathonPreloader />
 
     if (!liveData) return <div className="min-h-screen bg-[#03030F] flex items-center justify-center text-white font-mono uppercase tracking-widest text-xs">AWAITING SYSTEM DATA...</div>
 

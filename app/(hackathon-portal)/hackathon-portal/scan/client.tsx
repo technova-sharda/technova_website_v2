@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { processHackathonQrScan, getAllParticipantsForScan, getScannerStats } from "@/lib/actions/hackathon";
-import { ArrowLeft, Camera, QrCode, CheckCircle, AlertCircle, Coffee, ChevronDown, Search, UserCheck, LogOut, ChevronLeft, ChevronRight, X, Undo2 } from "lucide-react";
+import { ArrowLeft, Camera, QrCode, CheckCircle, AlertCircle, Coffee, ChevronDown, Search, UserCheck, LogOut, ChevronLeft, ChevronRight, X, Undo2, Utensils } from "lucide-react";
 import { createClient } from "@/supabase/client";
 
 const MEAL_ROUNDS = [
@@ -430,11 +430,11 @@ export default function HackathonScannerClient({ portalMode = false }: { portalM
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             {mode === 'checkin' && (
                                                 <span className={`text-[10px] font-bold px-2 py-1 rounded ${p.is_checked_in ? 'text-emerald-400 bg-emerald-500/10' : 'text-gray-500 font-mono tracking-wider bg-gray-50'}`}>
-                                                    {p.is_checked_in ? '✓ In' : '✗ Out'}
+                                                    {p.is_checked_in ? 'In' : 'Out'}
                                                 </span>
                                             )}
                                             {mode === 'food' && (
-                                                <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-2 py-1 rounded">🍽 {p.food_count}</span>
+                                                <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-2 py-1 rounded inline-flex items-center gap-1"><Utensils className="w-3 h-3" /> {p.food_count}</span>
                                             )}
 
                                             {mode === 'checkin' ? (

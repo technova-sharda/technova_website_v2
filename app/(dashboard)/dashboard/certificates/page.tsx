@@ -1,10 +1,27 @@
 import { Suspense } from "react"
 import Link from "next/link"
-import { Award, Download, ExternalLink, Calendar, Building2 } from "lucide-react"
+import { Award, Download, ExternalLink, Calendar, Building2, Linkedin } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getUserCertificates } from "@/lib/actions/certificates"
 import { formatDateShort } from "@/lib/utils"
+
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://www.technovashardauniversity.in").replace(/\/$/, "")
+
+/** LinkedIn "Add licence or certification" pre-filled form, pointing at the public verify page. */
+function linkedInAddUrl(cert: any): string {
+    const issued = new Date(cert.issued_at || cert.event?.start_time || Date.now())
+    const params = new URLSearchParams({
+        startTask: "CERTIFICATION_NAME",
+        name: [cert.role_title, cert.event?.title].filter(Boolean).join(" – ") || "Technova Certificate",
+        organizationName: "Technova, Sharda University",
+        issueYear: String(issued.getFullYear()),
+        issueMonth: String(issued.getMonth() + 1),
+        certUrl: `${SITE_URL}/verify/${cert.certificate_id}`,
+        certId: cert.certificate_id,
+    })
+    return `https://www.linkedin.com/profile/add?${params.toString()}`
+}
 
 // Helper to extract club name from Supabase join (can be array or object)
 function getClubName(club: any): string | null {
@@ -21,7 +38,7 @@ export const metadata = {
 async function CertificatesList() {
     const session = await auth()
     if (!session) {
-        redirect('/auth/signin')
+        redirect('/login')
     }
 
     const certificates = await getUserCertificates()
@@ -82,7 +99,7 @@ async function CertificatesList() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2 mt-2 md:mt-0">
+                        <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
                             <a
                                 href={`/api/certificate?id=${cert.certificate_id}`}
                                 target="_blank"
@@ -99,6 +116,15 @@ async function CertificatesList() {
                                 <ExternalLink className="w-4 h-4" />
                                 Verify
                             </Link>
+                            <a
+                                href={linkedInAddUrl(cert)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-4 py-2 bg-[#0A66C2] hover:bg-[#004182] text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                                <Linkedin className="w-4 h-4" />
+                                Add to LinkedIn
+                            </a>
                         </div>
                     </div>
 

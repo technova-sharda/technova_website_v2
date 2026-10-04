@@ -66,7 +66,7 @@ export async function sendBlastEmail(
     const emails = await Promise.all(participants.map(async participant => ({
         from: 'Technova <noreply@technovashardauniversity.in>',
         to: participant.email,
-        subject: `📢 ${subject} - ${event.title}`,
+        subject: `${subject} - ${event.title}`,
         html: await render(BlastEmail({
             eventName: event.title,
             userName: participant.name,

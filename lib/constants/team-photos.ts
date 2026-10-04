@@ -56,9 +56,6 @@ export const MEMBER_PHOTOS: Record<string, { folder: string; filename: string }>
     // Datapool
     "al_dua_khan": { folder: "datapool", filename: "al_dua_khan.png" },
     "al_dua": { folder: "datapool", filename: "al_dua_khan.png" },
-    "dushyant": { folder: "datapool", filename: "dushyant.png" },
-    "dushyant_singh": { folder: "datapool", filename: "dushyant.png" },
-    "dushyant_kumar": { folder: "datapool", filename: "dushyant.png" },
     "rahul_gupta": { folder: "datapool", filename: "rahul_gupta.png" },
     "rahul": { folder: "datapool", filename: "rahul_gupta.png" },
     "rajeev_gupta": { folder: "datapool", filename: "rajeev_gupta.png" },

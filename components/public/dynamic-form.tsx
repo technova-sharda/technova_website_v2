@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { submitFormResponse } from "@/lib/actions/forms"
@@ -122,7 +123,7 @@ export function DynamicForm({ form, existingResponse, systemId, referrerId }: an
             setFormState("submitted")
             triggerConfetti()
         } catch (error: any) {
-            alert(error.message || "Failed to submit form. Please try again.")
+            toast.error(error.message || "Failed to submit form. Please try again.")
         } finally {
             setIsSubmitting(false)
         }
@@ -317,7 +318,7 @@ export function DynamicForm({ form, existingResponse, systemId, referrerId }: an
                 {/* Celebration title */}
                 <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
                     className="text-4xl md:text-5xl font-extrabold text-white mb-3 tracking-tight">
-                    You&apos;re All Set! 🎉
+                    You&apos;re All Set!
                 </motion.h2>
 
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}

@@ -6,10 +6,14 @@ import { checkRegistration } from "@/lib/actions/registrations"
 import { EventRegistrationCard } from "@/components/events/registration-card"
 import { POCCard } from "@/components/events/poc-card"
 import { EventFeedbackSection } from "@/components/events/EventFeedbackSection"
+import { AddToCalendar } from "@/components/events/add-to-calendar"
+import { ShareEvent } from "@/components/events/share-event"
+import { eventPageUrl } from "@/lib/calendar/event-calendar"
 import { notFound } from "next/navigation"
 import { generateQRToken } from "@/lib/qr/generate"
 import { createClient } from "@supabase/supabase-js"
 import { formatDate, formatDateRange, formatTime } from "@/lib/utils"
+import { BannerImage } from "@/components/ui/banner-image"
 
 // Map club names to URL slugs
 const CLUB_NAME_TO_SLUG: Record<string, string> = {
@@ -37,8 +41,7 @@ export default async function EventPage({
 }) {
     const { id } = await params
     const { ref: referralCode } = await searchParams
-    const event = await getEventBySlugOrId(id)
-    const session = await auth()
+    const [event, session] = await Promise.all([getEventBySlugOrId(id), auth()])
 
     if (!event) {
         notFound()
@@ -86,10 +89,12 @@ export default async function EventPage({
             <div className="h-64 md:h-96 w-full bg-gray-900 relative">
                 <div className="absolute inset-0 flex items-center justify-center text-gray-700">
                     {event.banner ? (
-                        <img
+                        <BannerImage
                             src={event.banner}
                             alt={event.title}
-                            className="w-full h-full object-cover opacity-80"
+                            sizes="100vw"
+                            priority
+                            className="object-cover opacity-80"
                             style={{ objectPosition: event.banner_position || 'center' }}
                         />
                     ) : "No Banner"}
@@ -175,6 +180,12 @@ export default async function EventPage({
                                         </a>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Only while the event is still ahead or running */}
+                            <div className="flex flex-col gap-3 pt-2 border-t border-slate-100">
+                                {new Date(event.end_time) > new Date() && <AddToCalendar event={event} />}
+                                <ShareEvent title={event.title} url={eventPageUrl(event)} />
                             </div>
                         </div>
                     </div>
