@@ -107,11 +107,21 @@ const TEAM_METADATA: Record<string, any> = {
 }
 
 // Cards pinned to a fixed slot (1-based) on this page, regardless of role sorting
-const PINNED_POSITIONS: Record<string, number> = {
-    "Dushyant Prajapati": 3,
+const PINNED_POSITIONS: Record<string, number> = {}
+
+// Cards placed right after someone with a given role (e.g. after the Joint Secretary)
+const PLACE_AFTER_ROLE: Record<string, string> = {
+    "Dushyant Prajapati": "joint secretary",
 }
 
 function applyPinnedPositions<T extends { name: string }>(members: T[]): T[] {
+    const afterRole = members.filter(m => m.name in PLACE_AFTER_ROLE)
+    members = members.filter(m => !(m.name in PLACE_AFTER_ROLE))
+    for (const m of afterRole) {
+        const role = PLACE_AFTER_ROLE[m.name]
+        const anchor = members.findIndex(x => String((x as any).role ?? "").toLowerCase() === role)
+        members.splice(anchor === -1 ? members.length : anchor + 1, 0, m)
+    }
     const result = members.filter(m => !(m.name in PINNED_POSITIONS))
     members
         .filter(m => m.name in PINNED_POSITIONS)
