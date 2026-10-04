@@ -143,7 +143,7 @@ export function AnimatedBackground() {
 
       {/* ── Animated scan line (very subtle) ── */}
       <div
-        className="absolute left-0 right-0 h-px animate-scanline opacity-[0.03]"
+        className="absolute top-0 left-0 right-0 h-px animate-scanline opacity-[0.03]"
         style={{
           background: 'linear-gradient(90deg, transparent, rgba(245,166,35,0.5), transparent)',
         }}

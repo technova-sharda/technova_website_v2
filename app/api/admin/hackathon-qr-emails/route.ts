@@ -48,7 +48,7 @@ function buildTeamQrEmailHtml(teamName: string, leaderName: string, members: { n
                         <tr>
                             <td style="background: linear-gradient(135deg, #059669, #0d9488); padding:32px 40px; text-align:center;">
                                 <h1 style="margin:0; color:#fff; font-size:24px; font-weight:800; letter-spacing:-0.5px;">
-                                    🚀 CodeMania Hackathon
+                                    CodeMania Hackathon
                                 </h1>
                                 <p style="margin:8px 0 0; color:rgba(255,255,255,0.85); font-size:14px;">
                                     By Technova Society • Team QR Codes
@@ -70,17 +70,17 @@ function buildTeamQrEmailHtml(teamName: string, leaderName: string, members: { n
                                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
                                     <tr>
                                         <td style="padding:12px 16px; background:rgba(5,150,105,0.15); border-radius:12px 12px 0 0; border:1px solid rgba(5,150,105,0.2); border-bottom:none;">
-                                            <p style="margin:0; color:#34d399; font-size:14px; font-weight:600;">✅ Registration Check-in</p>
+                                            <p style="margin:0; color:#34d399; font-size:14px; font-weight:600;">Registration Check-in</p>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding:12px 16px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.2); border-bottom:none;">
-                                            <p style="margin:0; color:#fbbf24; font-size:14px; font-weight:600;">🍕 Meal Distribution (Lunch, Dinner, Snacks)</p>
+                                            <p style="margin:0; color:#fbbf24; font-size:14px; font-weight:600;">Meal Distribution (Lunch, Dinner, Snacks)</p>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding:12px 16px; background:rgba(59,130,246,0.15); border-radius:0 0 12px 12px; border:1px solid rgba(59,130,246,0.2);">
-                                            <p style="margin:0; color:#60a5fa; font-size:14px; font-weight:600;">🎯 Any logistics verification</p>
+                                            <p style="margin:0; color:#60a5fa; font-size:14px; font-weight:600;">Any logistics verification</p>
                                         </td>
                                     </tr>
                                 </table>
@@ -89,7 +89,7 @@ function buildTeamQrEmailHtml(teamName: string, leaderName: string, members: { n
                                 ${qrBlocks}
                                 
                                 <p style="color:#6b7280; font-size:12px; margin:24px 0 0; text-align:center; line-height:1.5;">
-                                    💡 <strong style="color:#9ca3af;">Tip:</strong> You can forward this email to your teammates or have them screenshot their individual QR codes for quick access on hackathon day.
+                                    <strong style="color:#9ca3af;">Tip:</strong> You can forward this email to your teammates or have them screenshot their individual QR codes for quick access on hackathon day.
                                 </p>
                             </td>
                         </tr>
@@ -207,13 +207,13 @@ export async function POST(request: NextRequest) {
                 const result = await resend.emails.send({
                     from: 'Technova <noreply@technovashardauniversity.in>',
                     to: recipientEmail,
-                    subject: `🎫 Your Team's Hackathon QR Codes — Team ${team.name}`,
+                    subject: `Your Team's Hackathon QR Codes — Team ${team.name}`,
                     html
                 })
 
                 // Resend reports failures in the result instead of throwing
                 if (result.error) throw new Error(result.error.message)
-                console.log(`[QR Email] ✅ Sent to ${recipientEmail} for Team "${team.name}" (${qrMembers.length} QR codes). Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
+                console.log(`[QR Email] Sent to ${recipientEmail} for Team "${team.name}" (${qrMembers.length} QR codes). Resend ID: ${(result as any)?.data?.id || 'N/A'}`)
 
                 // Mark team as emailed
                 await supabase.from('hackathon_teams').update({ qr_emailed: true }).eq('id', team.id)
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
                     await delay(2000)
                 } else {
                     const errMsg = err?.message || err?.statusCode || 'unknown error'
-                    console.error(`[QR Email] ❌ Failed: ${recipientEmail} for Team "${team.name}":`, errMsg)
+                    console.error(`[QR Email] Failed: ${recipientEmail} for Team "${team.name}":`, errMsg)
                     failed++
                     errors.push(`Team "${team.name}" (${recipientEmail}): ${errMsg}`)
                     break
@@ -236,7 +236,7 @@ export async function POST(request: NextRequest) {
         }
     }
 
-    const summary = `✅ Sent ${sent} QR email(s).${failed > 0 ? ` ❌ ${failed} failed.` : ''}${skipped > 0 ? ` ⏭️ ${skipped} skipped.` : ''}`
+    const summary = `Sent ${sent} QR email(s).${failed > 0 ? ` ${failed} failed.` : ''}${skipped > 0 ? ` ${skipped} skipped.` : ''}`
     console.log(`[QR Email] SUMMARY: ${summary}`)
 
     return NextResponse.json({

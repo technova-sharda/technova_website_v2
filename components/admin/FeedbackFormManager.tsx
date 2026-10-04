@@ -441,7 +441,7 @@ export function FeedbackFormManager({ eventId, isMultiDay, isVirtual, requiresFe
                                                                 return (
                                                                     <td key={q.id} className="p-2 max-w-[200px] truncate" title={displayAnswer}>
                                                                         {q.question_type === 'rating' ? (
-                                                                            <span className="text-yellow-500">{'★'.repeat(answer || 0)}{'☆'.repeat(5 - (answer || 0))}</span>
+                                                                            <span className="inline-flex gap-0.5" aria-label={`${answer || 0} of 5`}>{[1, 2, 3, 4, 5].map(n => <Star key={n} className={`w-3.5 h-3.5 ${n <= (answer || 0) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-600'}`} />)}</span>
                                                                         ) : displayAnswer}
                                                                     </td>
                                                                 )

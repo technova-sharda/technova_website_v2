@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Github, Linkedin, Globe, GraduationCap, ArrowRight, Mail } from "lucide-react";
+import { Github, Linkedin, Globe, GraduationCap, ArrowRight, Mail, Handshake } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -32,7 +32,7 @@ export function BuddyCard({ buddy }: { buddy: BuddyProfile }) {
         <Card className="overflow-hidden bg-white/[0.03] backdrop-blur-xl border border-white/10 hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-1 shadow-[0_8px_32px_rgba(0,0,0,0.3)] group relative">
             {isLookingForTeam && (
                 <Badge className="absolute top-3 right-3 z-10 bg-purple-500 hover:bg-purple-600 text-white animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.5)] border-none">
-                    🤝 Looking for Team
+                    <Handshake className="w-3.5 h-3.5 mr-1" /> Looking for Team
                 </Badge>
             )}
             <CardHeader className="flex flex-row items-center gap-4 pb-2">

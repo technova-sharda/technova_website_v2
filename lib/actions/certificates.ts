@@ -265,7 +265,7 @@ async function sendCertificateEmails(
             from: 'Technova <noreply@technovashardauniversity.in>',
             to: user.email,
             subject: cert.role_title && cert.certificate_type !== 'participation'
-                ? `🏆 Congratulations! You secured ${cert.role_title} at ${ctx.eventName}`
+                ? `Congratulations! You secured ${cert.role_title} at ${ctx.eventName}`
                 : `Your participation certificate for ${ctx.eventName}`,
             html: emailHtml
         })

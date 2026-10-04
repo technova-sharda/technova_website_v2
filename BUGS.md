@@ -67,23 +67,6 @@
 - [x] **U8** The form responses donut chart mutated a variable during render. Slice offsets are now precomputed (same picture).
 - [x] **U9** The photo mapping pointed "Dushyant …" club members at the deleted `datapool/dushyant.png` (broken image). Those three entries are removed; `Dushyant Prajapati` still maps to `technova_main/dushyant_prajapati.jpg`.
 
-### New bugs found and fixed (15)
-- [x] **E1** Resend returns errors instead of throwing. All 16 email call sites counted failures as "sent".
-- [x] **C8** **Dancing Script and Cormorant Garamond crashed certificate generation.** The Start2Code template uses Dancing Script. Each font now has a verified embedding mode, Cormorant uses new files, and a fallback chain means a certificate always generates.
-- [x] **C9** Gaps and collisions in script-font names ("Studen t", "Pr") from ligatures and missing kerning. The PDF now lays text out properly, and the editor preview matches.
-- [x] **S9** The attendance kiosk email lookup accepted wildcards (`%@gmail.com` returned a stranger's details). It now requires an exact match, updates need the email, and it's rate-limited.
-- [x] **S10** Buddy Finder returned every student's email to logged-out visitors. It now requires login and shows a sign-in prompt.
-- [x] **D11** The admin Registrations page was already missing rows (1,002 registrations against the 1,000 cap).
-- [x] **D12** "Undo check-in" never took the XP back, so re-scanning gave double XP.
-- [x] **D13** Weekly/monthly/yearly leaderboards ignored check-in XP, about 97% of all XP. This month showed 11 students and 170 XP; the correct figures are 21 and 1,070.
-- [x] **D14** XP-history inserts always failed (bug reports; the feedback award's first attempt).
-- [x] **D15** The feedback XP award could be given twice under a race. It now claims the award atomically.
-- [x] **U5** **Club pages could crash** (`/clubs/[slug]`): `useState`/`useEffect` ran after an early return (rules-of-hooks). The hooks now run first.
-- [x] **U6** The hackathon flipbook reloaded from scratch on every fullscreen toggle (component defined inside a component). Hoisted.
-- [x] **U7** Particles on both auth error pages and the home hackathon teaser jumped to new random spots on every re-render. Positions are now picked once.
-- [x] **U8** The form responses donut chart mutated a variable during render. Slice offsets are now precomputed (same picture).
-- [x] **U9** The photo mapping pointed "Dushyant …" club members at the deleted `datapool/dushyant.png` (broken image). Those three entries are removed; `Dushyant Prajapati` still maps to `technova_main/dushyant_prajapati.jpg`.
-
 ### ⚡ Speed and mobile: fixed 4 Oct (10)
 - [x] **P2** `/events`, `/clubs`, `/clubs/[slug]`, `/leadership`, `/resources`, `/community` and `/showcase` are rendered on the server. Students get a filled page straight away: no spinner, no second round-trip. Each page also has a proper title for Google.
 - [x] **P3** Events, clubs, club past events and resources come from a shared server cache (`lib/data/public-cache.ts`): 1–5 min, cleared immediately when an admin edits an event or resource. Most visits never reach the database.
@@ -103,6 +86,14 @@
 - [x] **S4** Admin roles are now managed on the **Admin Roles** page (super admins only). Two places that still trusted the old hard-coded email list (resource auto-approval, dashboard admin count) now use the real role.
 - [x] **D8** Bulk attendance: see FEATURES.md F7.
 - [x] **R1 (app side)** If the database refuses a registration because the event is full, students see "Event Full" instead of a raw error.
+
+### ⚡ Loading and polish: fixed 4 Oct, evening (6)
+- [x] **U15** **Pages loaded "weirdly".** The landing hero stayed blank (with white slivers of letters) until JavaScript loaded, because its entrance was JS-driven. It's now plain CSS and visible on first paint. The full-screen "INITIALIZING / Connecting to DevSpace…" splash is replaced by a thin progress bar that only appears after 300 ms. Two fake loaders that always waited 0.6–2.5 s (hackathon page, hackathon live) are gone.
+- [x] **P10** The site-wide background animated a line's `top`, forcing layout and repaint every frame on every page. It now uses a GPU transform; the blurred blobs get their own layer.
+- [x] **U16** `/hackathon/live` was 436 px wide on phones (timer digits had a 72 px minimum size). It now fits at 390 px.
+- [x] **U17** All emojis replaced: icons on screen, plain text in emails, subjects and messages.
+- [x] **H5** One-off scripts (incl. destructive `delete-user.mjs`, `clear-students.js`, `reset-db.js`) moved to `scripts/one-off/` with a warning README.
+- [x] Lint: the 31 unescaped-quote errors are fixed (48 → 17 errors).
 
 ### Partly fixed (4)
 - [~] **R3** Unpaid registrations can't check in, and no payment order is created without a registration. Still missing: the ticket after payment, and retrying a failed payment. *(No paid events exist yet.)*
@@ -130,16 +121,15 @@ File: `supabase/migrations/20261004_db_fixes.sql`. Rollback: `supabase/rollbacks
 - [ ] **D3** Event reminder emails have never been sent: there's no cron. Needs `CRON_SECRET` plus a schedule (a Vercel cron on Pro, or a free external cron every 30 min). This emails real students automatically, so it's your call.
 - [ ] `ko.png` in the team photos is unused.
 
-### 🔒 Low priority: security (per your call) (3)
+### 🔒 Low priority: security (per your call) (2)
 - [ ] **H6** Each action file creates its own service-role client.
 - [ ] Kiosk email one-time code.
-- [ ] **H5** One-off scripts in the repo root (incl. `delete-user.mjs`).
 
 ### 🔜 Still to do: features and clean-up (4)
 - [ ] **C5** Cache generated certificate PDFs
 - [ ] **H4** `@ts-ignore` / `as any` clean-up
 - [ ] **H7** Tests and error monitoring
-- [ ] 48 lint errors, none of them runtime bugs: 31 unescaped `'`/`"` in text, 12 "setState in effect" (`mounted` patterns that drive animations, fetch-then-set), 4 in the QR scanner pages (left alone so live scanning isn't put at risk), 1 memoization notice.
+- [ ] 17 lint errors, none of them runtime bugs: 12 "setState in effect" (`mounted` patterns that drive animations, fetch-then-set), 4 in the QR scanner pages (left alone so live scanning isn't put at risk), 1 memoization notice.
 
 ---
 

@@ -258,7 +258,7 @@ export function PastEventForm({ clubs, event }: PastEventFormProps) {
                         Show on Club Page
                     </label>
                     <p className="text-xs text-gray-400 mt-1">
-                        When enabled, this event will appear in the "Past Events" section on the club's public page.
+                        When enabled, this event will appear in the &quot;Past Events&quot; section on the club&apos;s public page.
                     </p>
                 </div>
             </div>

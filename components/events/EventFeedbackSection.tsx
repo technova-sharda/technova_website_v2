@@ -156,7 +156,7 @@ export function EventFeedbackSection({ eventId, userId, isRegistered, eventEnded
             }
 
             if (result.xpAwarded && result.xpAwarded > 0) {
-                showToast(`Thank you! You earned +${result.xpAwarded} XP 🎉`, 'success')
+                showToast(`Thank you! You earned +${result.xpAwarded} XP`, 'success')
             } else {
                 showToast(result.message || 'Thank you for your feedback!', 'success')
             }

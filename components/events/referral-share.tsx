@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Share2, Copy, Check, Gift, X } from 'lucide-react'
+import { Share2, Copy, Check, Gift, X, Lightbulb } from 'lucide-react'
 import { getReferralLink } from '@/lib/actions/referrals'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -165,8 +165,8 @@ export function ReferralShare({ eventSlugOrId, eventTitle }: ReferralShareProps)
 
                                 {/* Tips */}
                                 <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
-                                    <p className="text-purple-300 text-sm">
-                                        💡 <strong>Tip:</strong> Share on WhatsApp groups, Instagram stories, or with friends to maximize your XP!
+                                    <p className="text-purple-300 text-sm flex items-start gap-2">
+                                        <Lightbulb className="w-4 h-4 mt-0.5 shrink-0" /> <span><strong>Tip:</strong> Share on WhatsApp groups, Instagram stories, or with friends to maximize your XP!</span>
                                     </p>
                                 </div>
                             </div>

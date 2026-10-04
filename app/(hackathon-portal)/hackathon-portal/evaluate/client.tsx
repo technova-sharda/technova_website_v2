@@ -140,7 +140,7 @@ export default function PortalEvaluatorClient({ initialTeams, evaluationOpen = t
                         <div className="flex items-start justify-between gap-4 mb-4">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900 mb-1">{team.name}</h2>
-                                <p className="text-gray-500 italic text-sm">"{team.idea_title}"</p>
+                                <p className="text-gray-500 italic text-sm">&quot;{team.idea_title}&quot;</p>
                             </div>
                             <div className="flex -space-x-2">
                                 {members.slice(0, 5).map((m: any, i: number) => (

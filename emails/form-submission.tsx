@@ -33,17 +33,17 @@ export const FormSubmissionEmail = ({
     return (
         <Html>
             <Head />
-            <Preview>Your submission for {formTitle} was received! 🎉</Preview>
+            <Preview>Your submission for {formTitle} was received!</Preview>
             <Body style={{ backgroundColor: '#09090b', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", padding: '16px', margin: '40px 0' }}>
                 <Container style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#18181b', borderRadius: '24px', border: '1px solid #27272a', overflow: 'hidden' }}>
                     
                     {/* Hero Section */}
                     <Section style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed, #10b981)', padding: '40px', textAlign: 'center' as const }}>
                         <Heading style={{ color: '#ffffff', fontSize: '28px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>
-                            Success! 🎉
+                            Success!
                         </Heading>
                         <Text style={{ color: 'rgba(255,255,255,0.85)', marginTop: '8px', fontSize: '16px', fontWeight: 500 }}>
-                            We've safely received your entry.
+                            We&apos;ve safely received your entry.
                         </Text>
                     </Section>
 

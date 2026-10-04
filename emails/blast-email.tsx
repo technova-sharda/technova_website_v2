@@ -34,14 +34,14 @@ export const BlastEmail = ({
             <Body style={main}>
                 <Container style={container}>
                     <Section style={headerSection}>
-                        <Heading style={h1}>📢 {eventName}</Heading>
+                        <Heading style={h1}>{eventName}</Heading>
                     </Section>
 
                     <Section style={contentSection}>
                         <Text style={greeting}>Hi {userName},</Text>
 
                         <Text style={text}>
-                            You're receiving this message because you're registered for <strong>{eventName}</strong>.
+                            You&apos;re receiving this message because you&apos;re registered for <strong>{eventName}</strong>.
                         </Text>
 
                         <Section style={messageCard}>
@@ -59,7 +59,7 @@ export const BlastEmail = ({
 
                     <Section style={footerSection}>
                         <Text style={footerText}>
-                            Technova - Sharda University's Official Tech Community
+                            Technova - Sharda University&apos;s Official Tech Community
                         </Text>
                     </Section>
                 </Container>

@@ -21,7 +21,7 @@ export default async function DashboardPage() {
                     <h1 className="text-3xl font-bold text-white tracking-tight">
                         Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">{session?.user?.name}</span>
                     </h1>
-                    <p className="text-gray-400 mt-1">Here's your activity overview and ranking.</p>
+                    <p className="text-gray-400 mt-1">Here&apos;s your activity overview and ranking.</p>
                 </div>
                 <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-gray-300 backdrop-blur-md">
                     Season 2025-2026

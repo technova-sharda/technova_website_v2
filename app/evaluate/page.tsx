@@ -1,3 +1,4 @@
+import { AlertTriangle } from "lucide-react"
 import { checkHackathonRole, getHackathonSettings, getTeamsForEvaluation, getSupabase } from "@/lib/actions/hackathon"
 import { redirect } from "next/navigation"
 import EvaluatorDashboardClient from "@/app/(admin)/admin/hackathon/evaluate/client"
@@ -43,8 +44,8 @@ export default async function HackathonEvaluatePage({ searchParams }: { searchPa
                 </div>
 
                 {!settings?.evaluation_open && (
-                    <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
-                        ⚠️ The evaluation period is currently <strong>closed</strong>. You can view teams but cannot submit scores.
+                    <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> <span>The evaluation period is currently <strong>closed</strong>. You can view teams but cannot submit scores.</span>
                     </div>
                 )}
 

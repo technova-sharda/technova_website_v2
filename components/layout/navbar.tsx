@@ -4,7 +4,7 @@ import { UserNav } from "../auth/user-nav"
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, X, LayoutDashboard, Rocket } from "lucide-react"
+import { Menu, X, LayoutDashboard, Rocket, User, Settings, LogOut } from "lucide-react"
 
 interface NavbarProps {
     user?: {
@@ -216,17 +216,17 @@ export function Navbar({ user }: NavbarProps) {
                                 {/* Profile Links */}
                                 <Link
                                     href="/profile"
-                                    className="block text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
+                                    className="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
                                     onClick={() => setIsOpen(false)}
                                 >
-                                    👤 My Profile
+                                    <User className="w-4 h-4" /> My Profile
                                 </Link>
                                 <Link
                                     href="/profile/edit"
-                                    className="block text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
+                                    className="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/10 py-3 px-4 rounded-lg"
                                     onClick={() => setIsOpen(false)}
                                 >
-                                    ⚙️ Edit Profile
+                                    <Settings className="w-4 h-4" /> Edit Profile
                                 </Link>
 
                                 {/* Logout Button */}
@@ -235,9 +235,9 @@ export function Navbar({ user }: NavbarProps) {
                                         setIsOpen(false)
                                         import('next-auth/react').then(({ signOut }) => signOut({ callbackUrl: '/' }))
                                     }}
-                                    className="block w-full text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-4 rounded-lg"
+                                    className="flex items-center gap-3 w-full text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 py-3 px-4 rounded-lg"
                                 >
-                                    🚪 Logout
+                                    <LogOut className="w-4 h-4" /> Logout
                                 </button>
                             </div>
                         ) : (

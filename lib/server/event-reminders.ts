@@ -85,7 +85,7 @@ export async function sendEventReminders(): Promise<{ success: boolean; eventsSe
         const emails = await Promise.all(event.participants.map(async participant => ({
             from: 'Technova <noreply@technovashardauniversity.in>',
             to: participant.email,
-            subject: `⏰ Reminder: ${event.title} starts in ${hoursUntilEvent} hours!`,
+            subject: `Reminder: ${event.title} starts in ${hoursUntilEvent} hours!`,
             html: await render(ReminderEmail({
                 eventName: event.title,
                 userName: participant.name,

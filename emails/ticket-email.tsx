@@ -82,7 +82,7 @@ export const TicketEmail = ({
                         {calendarUrl && (
                             <Text style={text}>
                                 <Link href={calendarUrl} style={{ color: "#2563eb", fontWeight: 600 }}>
-                                    📅 Add to Google Calendar
+                                    Add to Google Calendar
                                 </Link>
                             </Text>
                         )}

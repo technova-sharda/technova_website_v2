@@ -593,7 +593,7 @@ function FieldCard({
                         )}
                         {sectionFields.length > 0 && field.type === "select" && (
                             <p className="text-[10px] text-[#52525b] mt-2">
-                                💡 Set "Go to section" for each option to create conditional branching.
+                                Tip: set &quot;Go to section&quot; for each option to create conditional branching.
                             </p>
                         )}
                     </div>

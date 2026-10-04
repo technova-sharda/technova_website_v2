@@ -2,11 +2,10 @@
 
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Zap, Trophy, ShieldAlert, Cpu, HeartPulse, BookOpen, LineChart, Globe, GraduationCap, Download, Users, Award, Star, ArrowUpRight, CheckCircle, Sparkles, ChevronDown, MapPin, Wifi, Coffee, ArrowRight, Phone, User, Clock, DoorOpen, Flag, PartyPopper } from 'lucide-react'
+import { ArrowLeft, Zap, Trophy, ShieldAlert, Cpu, HeartPulse, BookOpen, LineChart, Globe, GraduationCap, Download, Users, Award, Star, ArrowUpRight, CheckCircle, Sparkles, ChevronDown, MapPin, Wifi, Coffee, ArrowRight, Phone, User, Clock, DoorOpen, Flag, PartyPopper, ClipboardList, Lock, Search, Rocket, Medal } from 'lucide-react'
 import { VenueCarousel } from '@/components/hackathon/venue-carousel'
 import { Footer } from '@/components/layout/footer'
 import { useEffect, useState, useRef, useMemo } from 'react'
-import { DevPreloader } from '@/components/ui/dev-preloader'
 
 /* ─── Ease curves ─── */
 const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1]
@@ -69,7 +68,7 @@ function Section({ children, className = '', delay = 0 }: { children: React.Reac
 }
 
 /* ─── Prize Reveal Card ─── */
-function PrizeRevealCard({ place, amount, accent, delay, emoji }: { place: string; amount: string; accent: string; delay: number; emoji: string }) {
+function PrizeRevealCard({ place, amount, accent, delay, medalClass }: { place: string; amount: string; accent: string; delay: number; medalClass: string }) {
     const [revealed, setRevealed] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
 
@@ -98,7 +97,7 @@ function PrizeRevealCard({ place, amount, accent, delay, emoji }: { place: strin
                 animate={revealed ? { clipPath: "inset(0 0 100% 0)" } : {}}
                 transition={{ duration: 0.8, ease: EASE_OUT, delay: delay + 0.3 }}
             >
-                <span className="text-4xl">{emoji}</span>
+                <Medal className={`w-12 h-12 ${medalClass}`} strokeWidth={1.5} />
             </motion.div>
 
             <div className="p-5 sm:p-8 text-center relative z-0">
@@ -120,7 +119,6 @@ function PrizeRevealCard({ place, amount, accent, delay, emoji }: { place: strin
 
 export default function HackathonPage() {
     const [currentDate, setCurrentDate] = useState<Date | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
     const [revealedContacts, setRevealedContacts] = useState<number[]>([])
     const [activeTrack, setActiveTrack] = useState<number | null>(null)
     const [expandedTrack, setExpandedTrack] = useState<number | null>(null)
@@ -149,17 +147,16 @@ export default function HackathonPage() {
     useEffect(() => {
         setCurrentDate(new Date())
         const timer = setInterval(() => setCurrentDate(new Date()), 1000)
-        setTimeout(() => setIsLoading(false), 600)
         return () => clearInterval(timer)
     }, [])
 
     const timelineEvents = [
-        { date: "14 Feb 2026", title: "Registrations Open", timestamp: new Date("2026-02-14").getTime(), desc: "Team formation begins", icon: "📋" },
-        { date: "14 Mar 2026", title: "Registration Closes", timestamp: new Date("2026-03-14").getTime(), desc: "Final submissions accepted", icon: "🔒" },
-        { date: "16-18 Mar 2026", title: "1st Round Screening", timestamp: new Date("2026-03-16").getTime(), desc: "Idea evaluation phase", icon: "🔍" },
-        { date: "24 Mar 2026", title: "Shortlisted Teams", timestamp: new Date("2026-03-24").getTime(), desc: "Selected teams announced", icon: "⭐" },
-        { date: "10 Apr, 10:30", title: "Hackathon Begins 🚀", timestamp: new Date("2026-04-10T10:30:00").getTime(), desc: "The 24-hour clock officially starts. Start building!", icon: "🚀" },
-        { date: "11 Apr, 14:00", title: "Closing Ceremony & Awards", timestamp: new Date("2026-04-11T14:00:00").getTime(), desc: "Results announcement, prize distribution, and group photo.", icon: "🏆" },
+        { date: "14 Feb 2026", title: "Registrations Open", timestamp: new Date("2026-02-14").getTime(), desc: "Team formation begins", icon: ClipboardList },
+        { date: "14 Mar 2026", title: "Registration Closes", timestamp: new Date("2026-03-14").getTime(), desc: "Final submissions accepted", icon: Lock },
+        { date: "16-18 Mar 2026", title: "1st Round Screening", timestamp: new Date("2026-03-16").getTime(), desc: "Idea evaluation phase", icon: Search },
+        { date: "24 Mar 2026", title: "Shortlisted Teams", timestamp: new Date("2026-03-24").getTime(), desc: "Selected teams announced", icon: Star },
+        { date: "10 Apr, 10:30", title: "Hackathon Begins", timestamp: new Date("2026-04-10T10:30:00").getTime(), desc: "The 24-hour clock officially starts. Start building!", icon: Rocket },
+        { date: "11 Apr, 14:00", title: "Closing Ceremony & Awards", timestamp: new Date("2026-04-11T14:00:00").getTime(), desc: "Results announcement, prize distribution, and group photo.", icon: Trophy },
     ]
 
     const getTimerData = () => {
@@ -211,7 +208,6 @@ export default function HackathonPage() {
         { q: "When should we arrive?", a: "All teams must arrive by 9:30 AM on 10th April. The hackathon starts at 10:30 AM sharp." }
     ]
 
-    if (isLoading) return <DevPreloader />
 
     return (
         <div className="min-h-screen bg-[#050510] text-white/90 font-sans overflow-x-hidden selection:bg-indigo-500/30 selection:text-white relative">
@@ -275,7 +271,7 @@ export default function HackathonPage() {
                                 <span className="block text-white/20">Hackathon</span>
                             </motion.h1>
                             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.25, ease: EASE_OUT }} className="max-w-lg text-base sm:text-lg text-white/50 leading-relaxed">
-                                The ultimate test of endurance, creativity, and raw technical skill. 24 hours to build solutions that power the future of India's digital ecosystem.
+                                The ultimate test of endurance, creativity, and raw technical skill. 24 hours to build solutions that power the future of India&apos;s digital ecosystem.
                             </motion.p>
                         </div>
                         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3, ease: EASE_OUT }} className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4">
@@ -423,9 +419,9 @@ export default function HackathonPage() {
 
                             {/* Podium */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto mb-8">
-                                <PrizeRevealCard place="1st Place" amount="₹1 Lakh" accent="from-amber-400 to-yellow-300" delay={0} emoji="🥇" />
-                                <PrizeRevealCard place="2nd Place" amount="₹50K" accent="from-cyan-400 to-blue-500" delay={0.15} emoji="🥈" />
-                                <PrizeRevealCard place="3rd Place" amount="₹25K" accent="from-amber-600 to-amber-400" delay={0.3} emoji="🥉" />
+                                <PrizeRevealCard place="1st Place" amount="₹1 Lakh" accent="from-amber-400 to-yellow-300" delay={0} medalClass="text-amber-300" />
+                                <PrizeRevealCard place="2nd Place" amount="₹50K" accent="from-cyan-400 to-blue-500" delay={0.15} medalClass="text-slate-200" />
+                                <PrizeRevealCard place="3rd Place" amount="₹25K" accent="from-amber-600 to-amber-400" delay={0.3} medalClass="text-orange-400" />
                             </div>
 
                             {/* Theme prize banner */}
@@ -452,7 +448,7 @@ export default function HackathonPage() {
                         <h2 className="text-3xl sm:text-5xl md:text-6xl font-heading font-black tracking-tight text-white uppercase mb-3">
                             The <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">Arena</span>
                         </h2>
-                        <p className="text-white/40 max-w-lg text-sm sm:text-base leading-relaxed">Your battlefield awaits at Sharda University. Here's how to get there.</p>
+                        <p className="text-white/40 max-w-lg text-sm sm:text-base leading-relaxed">Your battlefield awaits at Sharda University. Here&apos;s how to get there.</p>
                     </div>
 
                     {/* Venue features */}
@@ -532,7 +528,7 @@ export default function HackathonPage() {
                                         <div className="relative z-10 flex flex-col items-center shrink-0 pt-6">
                                             <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl border-2 transition-all duration-300 ${isPast ? 'bg-indigo-500/10 border-indigo-500/40' : isCurrent ? 'bg-amber-500/10 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'bg-white/[0.03] border-white/[0.08]'
                                                 }`}>
-                                                {t.icon}
+                                                <t.icon className={`w-5 h-5 sm:w-7 sm:h-7 ${isPast ? "text-indigo-300" : isCurrent ? "text-amber-300" : "text-white/40"}`} />
                                             </div>
                                             {/* Filled line segment for past */}
                                             {isPast && i < timelineEvents.length - 1 && (
@@ -545,7 +541,7 @@ export default function HackathonPage() {
                                             <div className="flex items-center gap-3 mb-2">
                                                 <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md ${isPast ? 'bg-indigo-500/10 text-indigo-400' : isCurrent ? 'bg-amber-500/10 text-amber-400 animate-pulse' : 'bg-white/[0.04] text-white/30'
                                                     }`}>
-                                                    {isPast ? '✓ Completed' : isCurrent ? '● Current' : 'Upcoming'}
+                                                    {isPast ? 'Completed' : isCurrent ? 'Current' : 'Upcoming'}
                                                 </span>
                                                 <span className="text-[10px] sm:text-xs text-white/30 font-medium tracking-wider">{t.date}</span>
                                             </div>

@@ -70,3 +70,23 @@ export const getCachedClubPastEvents = unstable_cache(
     ["club-past-events-v1"],
     { revalidate: 300, tags: [CLUBS_TAG, PUBLIC_EVENTS_TAG] }
 )
+
+export type SiteStats = { students: number; registrations: number; events: number; clubs: number }
+
+/** Real numbers for the landing page (it used to show hard-coded "2500+ members"). Hourly is plenty. */
+export const getCachedSiteStats = unstable_cache(
+    async (): Promise<SiteStats> => {
+        const supabase = createAdminClient()
+        const count = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0
+        const [students, registrations, events, clubs] = await Promise.all([
+            count(supabase.schema("next_auth").from("users").select("id", { count: "exact", head: true })),
+            count(supabase.from("registrations").select("id", { count: "exact", head: true })),
+            count(supabase.from("events").select("id", { count: "exact", head: true }).in("status", ["live", "completed"])),
+            // Real clubs only: "Technova Main" / "Technova Executives" are the society itself
+            supabase.from("clubs").select("name").then(({ data }) => (data ?? []).filter(c => !/^technova/i.test(c.name)).length),
+        ])
+        return { students, registrations, events, clubs }
+    },
+    ["site-stats-v1"],
+    { revalidate: 3600, tags: [PUBLIC_EVENTS_TAG] }
+)

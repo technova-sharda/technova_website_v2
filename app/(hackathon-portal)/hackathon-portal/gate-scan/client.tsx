@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { processGateScan, getGateStats, getOverdueParticipants } from "@/lib/actions/hackathon";
-import { ArrowLeft, Camera, CheckCircle, AlertCircle, DoorOpen, DoorClosed, Users, Activity, BarChart3 } from "lucide-react";
+import { ArrowLeft, Camera, CheckCircle, AlertCircle, DoorOpen, DoorClosed, Users, Activity, BarChart3, Timer } from "lucide-react";
 
 export default function GateScannerClient() {
     const [scanResult, setScanResult] = useState<'entry' | 'exit' | 'error' | null>(null);
@@ -353,7 +353,7 @@ export default function GateScannerClient() {
                                 <p className="text-sm font-medium text-white/80 mb-2">{teamInfo}</p>
                             )}
                             {timeOutside && (
-                                <p className="text-sm font-bold text-white bg-white/20 px-3 py-1 rounded-full mb-2">⏱ {timeOutside}</p>
+                                <p className="text-sm font-bold text-white bg-white/20 px-3 py-1 rounded-full mb-2 inline-flex items-center gap-1.5"><Timer className="w-4 h-4" /> {timeOutside}</p>
                             )}
                             <p className="text-white/90 font-medium text-sm">{message}</p>
                             <p className="text-white/50 text-[10px] font-mono mt-2">

@@ -79,7 +79,7 @@ export default function HackathonAdminPage() {
     };
 
     const handleDeleteAllTeams = async () => {
-        if (!confirm("🚨 WARNING 🚨\n\nThis will permanently delete ALL teams, evaluations, and participants from this hackathon. This cannot be undone.\n\nAre you absolutely sure you want to proceed?")) return;
+        if (!confirm("WARNING\n\nThis will permanently delete ALL teams, evaluations, and participants from this hackathon. This cannot be undone.\n\nAre you absolutely sure you want to proceed?")) return;
 
         setDeletingTeams(true);
         setMessage(null);
@@ -318,7 +318,7 @@ export default function HackathonAdminPage() {
                             </div>
 
                             <p className="text-sm text-gray-400 mb-6">
-                                Upload an Excel (.xlsx) or CSV file downloaded from Google Forms. Ensure columns include 'Team Name', 'Idea', 'Leader Name', 'Leader Email', etc.
+                                Upload an Excel (.xlsx) or CSV file downloaded from Google Forms. Ensure columns include &apos;Team Name&apos;, &apos;Idea&apos;, &apos;Leader Name&apos;, &apos;Leader Email&apos;, etc.
                             </p>
 
                             <form onSubmit={handleUpload} className="space-y-4">
@@ -714,7 +714,7 @@ export default function HackathonAdminPage() {
                                 {settings?.active_announcement && (
                                     <div className="mt-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
                                         <p className="text-xs text-emerald-400 flex items-center gap-1">
-                                            <CheckCircle className="w-3 h-3" /> Currently showing: "{settings.active_announcement}"
+                                            <CheckCircle className="w-3 h-3" /> Currently showing: &quot;{settings.active_announcement}&quot;
                                         </p>
                                         <button
                                             onClick={handleClearAnnouncement}

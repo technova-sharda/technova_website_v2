@@ -422,7 +422,7 @@ export async function submitFormResponse(formId: string, answers: any[], referre
         await sendEmailOrThrow(resend, {
             from: 'Technova <noreply@technovashardauniversity.in>',
             to: session.user.email!,
-            subject: `✅ Submission Received: ${form.title}`,
+            subject: `Submission Received: ${form.title}`,
             html: emailHtml
         })
     } catch (err) {

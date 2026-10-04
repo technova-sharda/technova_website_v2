@@ -36,7 +36,7 @@ export const EvaluatorInviteEmail = ({
                             We need your expertise
                         </Heading>
                         <Text style={{ color: 'rgba(255,255,255,0.85)', marginTop: '12px', fontSize: '15px', fontWeight: 500 }}>
-                            You've been selected as an evaluator.
+                            You&apos;ve been selected as an evaluator.
                         </Text>
                     </Section>
 

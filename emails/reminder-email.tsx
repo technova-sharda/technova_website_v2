@@ -34,11 +34,11 @@ export const ReminderEmail = ({
     return (
         <Html>
             <Head />
-            <Preview>{`⏰ ${eventName} starts in ${hoursUntilEvent} hours!`}</Preview>
+            <Preview>{`${eventName} starts in ${hoursUntilEvent} hours!`}</Preview>
             <Body style={main}>
                 <Container style={container}>
                     <Section style={headerSection}>
-                        <Heading style={h1}>⏰ Event Reminder</Heading>
+                        <Heading style={h1}>Event Reminder</Heading>
                     </Section>
 
                     <Section style={contentSection}>
@@ -51,18 +51,18 @@ export const ReminderEmail = ({
                             <Text style={eventTitle}>{eventName}</Text>
                             <Hr style={divider} />
                             <Text style={eventDetail}>
-                                📅 <strong>Date:</strong> {eventDate}
+                                <strong>Date:</strong> {eventDate}
                             </Text>
                             <Text style={eventDetail}>
-                                🕐 <strong>Time:</strong> {eventTime}
+                                <strong>Time:</strong> {eventTime}
                             </Text>
                             <Text style={eventDetail}>
-                                📍 <strong>Venue:</strong> {venue}
+                                <strong>Venue:</strong> {venue}
                             </Text>
                         </Section>
 
                         <Text style={countdown}>
-                            ⏳ Starting in approximately <strong>{hoursUntilEvent} hours</strong>
+                            Starting in approximately <strong>{hoursUntilEvent} hours</strong>
                         </Text>
 
                         <Section style={buttonContainer}>
@@ -72,13 +72,13 @@ export const ReminderEmail = ({
                         </Section>
 
                         <Text style={footer}>
-                            Make sure you have everything ready. We're excited to see you there!
+                            Make sure you have everything ready. We&apos;re excited to see you there!
                         </Text>
                     </Section>
 
                     <Section style={footerSection}>
                         <Text style={footerText}>
-                            Technova - Sharda University's Official Tech Community
+                            Technova - Sharda University&apos;s Official Tech Community
                         </Text>
                     </Section>
                 </Container>

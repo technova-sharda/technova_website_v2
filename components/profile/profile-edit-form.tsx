@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { updateProfile } from "@/lib/actions/profile"
-import { User, Hash, GraduationCap, Phone, Sparkles, ArrowLeft, Save, Loader2, Link2, Globe } from "lucide-react"
+import { User, Hash, GraduationCap, Phone, Sparkles, ArrowLeft, Save, Loader2, Link2, Globe, Handshake } from "lucide-react"
 import Link from "next/link"
 
 const COURSES = [
@@ -272,7 +272,7 @@ export function ProfileEditForm({ initialData }: ProfileEditFormProps) {
                             className="w-5 h-5 rounded border-purple-500/50 bg-black/50 text-purple-600 focus:ring-purple-500/50 cursor-pointer"
                         />
                         <div>
-                            <p className="text-sm font-medium text-purple-300">🤝 Looking for Team</p>
+                            <p className="text-sm font-medium text-purple-300 flex items-center gap-1.5"><Handshake className="w-4 h-4" /> Looking for Team</p>
                             <p className="text-xs text-purple-400/80">Turn this on to let others know you are looking for a hackathon or project team.</p>
                         </div>
                     </div>

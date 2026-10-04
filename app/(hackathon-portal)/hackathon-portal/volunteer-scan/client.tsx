@@ -298,7 +298,7 @@ export default function VolunteerScannerClient() {
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <span className={`text-[10px] font-bold px-2 py-1 rounded ${v.is_checked_in ? 'text-emerald-400 bg-emerald-500/10' : 'text-gray-500 font-mono tracking-wider bg-gray-50'}`}>
-                                                {v.is_checked_in ? '✓ In' : '✗ Out'}
+                                                {v.is_checked_in ? 'In' : 'Out'}
                                             </span>
                                             <div className="flex items-center gap-1.5">
                                                 <button

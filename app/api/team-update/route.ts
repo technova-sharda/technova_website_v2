@@ -190,11 +190,11 @@ export async function POST(req: NextRequest) {
                     await sendEmailOrThrow(resend, {
                         from: "Technova System <no-reply@technovashardauniversity.in>",
                         to: adminEmail,
-                        subject: `⚡ Team Update: ${teamData?.name || 'Unknown'} (${teamData?.team_code || 'N/A'})`,
+                        subject: `Team Update: ${teamData?.name || 'Unknown'} (${teamData?.team_code || 'N/A'})`,
                         html: `
                             <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0b; color: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #333;">
                                 <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px; text-align: center;">
-                                    <h1 style="margin: 0; color: #000; font-size: 20px;">⚡ Team Data Updated</h1>
+                                    <h1 style="margin: 0; color: #000; font-size: 20px;">Team Data Updated</h1>
                                 </div>
                                 <div style="padding: 24px;">
                                     <p style="color: #ccc; margin-bottom: 4px; font-size: 14px;"><strong>Team:</strong> ${teamData?.name || 'Unknown'}</p>
