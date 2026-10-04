@@ -371,7 +371,7 @@ export function ClubDetailsClient({ slug, clubData, pastEvents }: {
             email: m.email,
             phone: m.phone,
             linkedin: m.linkedin_id,
-            photo: getMemberPhotoPath(m.name)
+            photo: m.photo_url || getMemberPhotoPath(m.name)
         }))
         : (club?.team || [])
 
@@ -552,7 +552,7 @@ export function ClubDetailsClient({ slug, clubData, pastEvents }: {
                                 />
                                 <div className="relative w-56 h-56 rounded-full bg-white shadow-2xl flex items-center justify-center p-8 border-4 border-white/30">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <span className="relative block w-40 h-40"><TeamPhoto src={club.logo} name={club.name} sizes="160px" className="object-contain" priority /></span>
+                                    <span className="relative block w-40 h-40"><TeamPhoto src={dbClub?.logo_url || club.logo} name={club.name} sizes="160px" className="object-contain" priority /></span>
                                 </div>
                             </div>
 

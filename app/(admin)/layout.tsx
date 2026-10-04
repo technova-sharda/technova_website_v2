@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { AdminShell } from "@/components/admin/admin-shell"
+import { canViewAuditLog } from "@/lib/audit/viewers"
 
 export default async function AdminLayout({
     children,
@@ -46,6 +47,7 @@ export default async function AdminLayout({
             userName={session.user.name}
             userRole={session.user.role}
             userImage={session.user.image}
+            canViewLogs={canViewAuditLog(session.user.email)}
         >
             {children}
         </AdminShell>

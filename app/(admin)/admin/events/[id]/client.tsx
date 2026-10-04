@@ -13,6 +13,7 @@ import { Toast, useToast } from "@/components/ui/toast"
 import { togglePastEvent, setRegistrationsClosed as setEventRegistrationsClosed } from "@/lib/actions/events"
 import { formatDate } from "@/lib/utils"
 import { FeedbackFormManager } from "@/components/admin/FeedbackFormManager"
+import { EcrDialog } from "@/components/admin/ecr-dialog"
 
 type CheckInFilter = 'all' | 'checked_in' | 'not_checked_in'
 
@@ -38,6 +39,7 @@ export function AdminEventClient({ event, registrations }: { event: any, registr
     const [showRegistrationsModal, setShowRegistrationsModal] = useState(false)
     const [isUpdatingRegistrations, setIsUpdatingRegistrations] = useState(false)
     const { toast, showToast, hideToast } = useToast()
+    const [showEcr, setShowEcr] = useState(false)
 
     // Blast email state
     const [showBlastModal, setShowBlastModal] = useState(false)
@@ -264,13 +266,13 @@ export function AdminEventClient({ event, registrations }: { event: any, registr
                         >
                             <UserCheck className="w-4 h-4" /> Bulk Attendance
                         </Link>
-                        <a
-                            href={`/api/admin/events/${event.id}/report?ai=1`}
-                            className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/10 text-white rounded-lg hover:bg-zinc-800 text-sm font-medium transition-colors"
-                            title="Branded PDF for the HOD/Dean: registrations, turnout, audience, ratings and an AI-written summary"
+                        {/* Event Completion Report (Sharda format): popup to check/fill fields, then Word, PDF or PDF + analytics */}
+                        <button
+                            onClick={() => setShowEcr(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 text-sm font-semibold transition-colors"
                         >
-                            <FileDown className="w-4 h-4" /> Event Report
-                        </a>
+                            <FileDown className="w-4 h-4" /> ECR Report
+                        </button>
                         <button
                             onClick={() => setShowBlastModal(true)}
                             className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/10 text-white rounded-lg hover:bg-zinc-800 text-sm font-medium transition-colors"
@@ -690,6 +692,7 @@ export function AdminEventClient({ event, registrations }: { event: any, registr
                 </Modal>
 
                 {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+                <EcrDialog eventId={event.id} open={showEcr} onOpenChange={setShowEcr} />
             </div>
         </MotionConfig>
     )

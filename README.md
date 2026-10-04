@@ -50,13 +50,16 @@ The production database holds real student data (all B.Tech registrations, atten
 |---|---|
 | Events | Create / edit / past events, banners (auto-resized to WebP on upload), registrations table, CSV export, blast email, Stop Registrations switch. |
 | Bulk Attendance | `/admin/events/<id>/attendance`: upload a Google Meet / Zoom attendance CSV (matched by email or system ID, never by name) or tick students; per day for multi-day events; same XP as a QR scan, never awarded twice. |
-| Event Report (PDF) | One click on an event: branded A4 report for the HOD/Dean with registrations, turnout, audience by year/course, ratings and an AI-written summary. |
+| ECR (Word / PDF) | "ECR Report" on an event opens a popup with every field of Sharda's Event Completion Report, prefilled from the website, empty ones flagged (speakers, video link, etc.). Edits are remembered in the browser (conveners for all events). Downloads: ECR Word, ECR PDF, or **ECR + Analytics PDF**: a colour report with Technova, club and Sharda logos, engagement score, comparison with other events, registration timeline (promotion), who registered, turnout by year, day-wise attendance, feedback breakdown, AI-grouped comments and findings ("what worked", "where it fell short", "what to do next time"), followed by the ECR pages. |
+| Club Management | `/club-management` (also linked from the dashboard and admin sidebar): change a club's logo, description and links, add / edit / remove coordinators, change roles and upload coordinator photos (with a crop step: drag, zoom, rotate). A club's Lead can manage only that club; Technova's President, Vice President and Tech Lead can manage every club. Only those three can assign, remove or change a Club Lead. Access is worked out from `club_members` (role + email), cached per email for 5 minutes, and cleared as soon as anything changes. |
+| Mobile | The admin panel works on phones: menu button with a slide-in drawer, scrollable sidebar, tables that fit the screen. |
 | Certificates | Per-event workspace (participation templates with fonts, Top 1/2/3 position certificates, bulk send). Plus a hub (`/admin/certificates`) across all events: not emailed, pending, revoked, downloads, search by ID or student. |
 | Feedback | Form builder, responses, ratings, and "Summarise comments" (AI groups written comments into praise / complaints / suggestions). |
 | Analytics | `/admin/analytics`: KPIs, monthly activity, year and course mix, club comparison, ratings, repeat participation, XP spread, sortable table of every event. |
 | Ask Technova | `/admin/insights`: ask questions in plain English ("Which 5 events had the best turnout?") and get an answer with a chart. Details under [AI features](#ai-features). |
 | People | `/admin/people`: look up any student's events, attendance, certificates and XP. |
 | Admin Roles | `/admin/roles`: make anyone Super Admin (full panel), Admin (scanner only) or Student; confirmation, no self-change, never zero super admins, change history. |
+| Activity Logs | `/admin/logs` (only the Tech Lead; change with `AUDIT_LOG_VIEWERS`): who changed what and when. Every successful database write and file upload made by a super admin (and any Club Management change) is recorded automatically by the server Supabase client (`lib/audit`), written after the response so pages don't slow down. Filter by person, type, action, date; search; grouped per click with the changed fields. Append-only table `admin_audit_log` (migration `20261005_admin_audit_log.sql`). Scanner check-ins and students' own actions aren't logged. |
 | Scanners and hackathon portal | QR check-in, gate / food / attendance scanners, hackathon team management and evaluation. |
 
 ### AI features
@@ -87,7 +90,8 @@ lib/
   analytics/       Anonymous dataset + metric functions (dashboard, PDF report, AI)
   ai/              NVIDIA client, Ask Technova tools, feedback themes
   data/            Cached readers for public pages (unstable_cache + tags)
-  reports/         Event report PDF (pdf-lib)
+  reports/         ECR (Word via docx, PDF via pdf-lib), ECR + Analytics PDF (event-analytics.ts = numbers and findings, analytics-pdf.ts = drawing)
+  clubs/           Club Management access rules and uploaded coordinator photos
   certificates/    Certificate PDF generation (pdf-lib + fontkit, custom text layout)
   xp/, dates/, calendar/, email/, server/, supabase/
 supabase/

@@ -14,10 +14,11 @@ import { getPublicEvents } from "@/lib/actions/events"
 import { getClubs, getClubMembersByName, getClubWithMembers } from "@/lib/actions/clubs"
 import { getPastEvents } from "@/lib/actions/club-events"
 import { createAdminClient } from "@/lib/supabase/server"
+import { withUploadedPhotos } from "@/lib/clubs/photos"
 
 /** Admin event changes call revalidateTag(PUBLIC_EVENTS_TAG); the timer is a backstop. */
 export const PUBLIC_EVENTS_TAG = "public-events"
-/** Club and member rows are edited in Supabase directly, so only the timer refreshes them. */
+/** Club Management changes call revalidateTag(CLUBS_TAG); the timer is a backstop for edits made directly in Supabase. */
 export const CLUBS_TAG = "clubs"
 
 export const getCachedPublicEvents = unstable_cache(
@@ -33,14 +34,17 @@ export const getCachedClubs = unstable_cache(
 )
 
 export const getCachedClubMembersByName = unstable_cache(
-    async (clubName: string) => getClubMembersByName(clubName),
-    ["club-members-by-name-v1"],
+    async (clubName: string) => withUploadedPhotos(await getClubMembersByName(clubName)),
+    ["club-members-by-name-v2"],
     { revalidate: 300, tags: [CLUBS_TAG] }
 )
 
 export const getCachedClubWithMembers = unstable_cache(
-    async (clubName: string) => getClubWithMembers(clubName),
-    ["club-with-members-v1"],
+    async (clubName: string) => {
+        const data = await getClubWithMembers(clubName)
+        return data ? { ...data, members: await withUploadedPhotos(data.members) } : null
+    },
+    ["club-with-members-v2"],
     { revalidate: 300, tags: [CLUBS_TAG] }
 )
 

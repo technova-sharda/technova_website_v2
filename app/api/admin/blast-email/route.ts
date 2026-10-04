@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendBlastEmail } from '@/lib/actions/notifications'
+import { recordAction } from '@/lib/audit/audit'
 
 // Rendering and sending to a few hundred participants needs more than the default time
 export const maxDuration = 60
@@ -28,6 +29,13 @@ export async function POST(request: NextRequest) {
                 { status: result.error === 'Unauthorized' ? 401 : 400 }
             )
         }
+
+        // Emails aren't a database change, so they're logged explicitly (Activity Logs)
+        recordAction({
+            action: 'email', entity: 'events', targetId: String(eventId),
+            summary: `Sent blast email "${String(subject).slice(0, 80)}" to ${result.emailsSent} participants${result.emailsFailed ? ` (${result.emailsFailed} failed)` : ''}`,
+            details: { changes: { subject: String(subject).slice(0, 200), message: String(message).slice(0, 300) } },
+        })
 
         return NextResponse.json({
             success: true,

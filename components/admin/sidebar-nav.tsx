@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, BarChart, Settings, Home, BookOpen, Rocket, FileText, ShieldCheck, UserRound, BarChart3, Sparkles, Award } from "lucide-react"
+import { Calendar, BarChart, Settings, Home, BookOpen, Rocket, FileText, ShieldCheck, UserRound, BarChart3, Sparkles, Award, Users, ScrollText } from "lucide-react"
 
 let insightsWarmed = false
 /** Start warming Ask Technova as soon as the admin points at the link. */
@@ -12,7 +12,7 @@ function warmInsights() {
     fetch("/api/admin/insights/warm", { method: "POST" }).catch(() => { insightsWarmed = false })
 }
 
-export function SidebarNav() {
+export function SidebarNav({ canViewLogs = false }: { canViewLogs?: boolean }) {
     const pathname = usePathname()
 
     const isActive = (path: string) => {
@@ -115,6 +115,16 @@ export function SidebarNav() {
             <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">People</div>
 
             <Link
+                href="/club-management"
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/club-management')
+                    ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+            >
+                <Users className="w-5 h-5" /> Club Management
+            </Link>
+
+            <Link
                 href="/admin/people"
                 className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/people')
                     ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
@@ -137,6 +147,19 @@ export function SidebarNav() {
             >
                 <ShieldCheck className="w-5 h-5" /> Admin Roles
             </Link>
+
+            {/* Only the people in lib/audit/viewers.ts see this; the page checks again on its own. */}
+            {canViewLogs && (
+                <Link
+                    href="/admin/logs"
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive('/admin/logs')
+                        ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/30'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                        }`}
+                >
+                    <ScrollText className="w-5 h-5" /> Activity Logs
+                </Link>
+            )}
 
             <Link
                 href="/admin/settings"

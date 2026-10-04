@@ -131,7 +131,7 @@ export function ClubsClient({ clubs: dbClubs }: { clubs: any[] }) {
                                                     >
                                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                                         <img
-                                                            src={assets.logo}
+                                                            src={club.logo_url || assets.logo}
                                                             alt={club.name}
                                                             className="w-20 h-20 object-contain"
                                                         />
