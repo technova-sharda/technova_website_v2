@@ -5,6 +5,7 @@
  * The resulting session token lives in the device keychain / keystore.
  */
 import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
+import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 import * as WebBrowser from 'expo-web-browser'
 import * as Crypto from 'expo-crypto'
@@ -31,6 +32,18 @@ export function useSession() {
   const v = use(SessionContext)
   if (!v) throw new Error('useSession must be inside <SessionProvider>')
   return v
+}
+
+/**
+ * Android: sign in through Chrome when it's installed. Some phones (HONOR, Xiaomi…)
+ * otherwise pick their own browser, which can route pages through its servers.
+ */
+async function androidBrowser(): Promise<WebBrowser.AuthSessionOpenOptions> {
+  if (Platform.OS !== 'android') return {}
+  try {
+    const { browserPackages } = await WebBrowser.getCustomTabsSupportingBrowsersAsync()
+    return browserPackages.includes('com.android.chrome') ? { browserPackage: 'com.android.chrome' } : {}
+  } catch { return {} }
 }
 
 const toB64Url = (b64: string) => b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -69,7 +82,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const challenge = toB64Url(await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, verifier, { encoding: Crypto.CryptoEncoding.BASE64 }))
     const redirect = Linking.createURL('auth')
     const start = `${API_URL}/api/mobile/auth/start?challenge=${challenge}&redirect=${encodeURIComponent(redirect)}`
-    const result = await WebBrowser.openAuthSessionAsync(start, redirect)
+    const result = await WebBrowser.openAuthSessionAsync(start, redirect, await androidBrowser())
     if (result.type !== 'success') return
     const code = Linking.parse(result.url).queryParams?.code
     if (typeof code !== 'string') throw new Error('Sign-in was not completed')

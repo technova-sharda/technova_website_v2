@@ -24,7 +24,7 @@ session token in the phone's keychain / keystore.
 2. `cd mobile && npm install && npx expo start`
 3. Scan the QR code shown in the terminal (Android: in Expo Go; iPhone: with the Camera app).
 
-The app uses `https://technovashardauniversity.in` by default. To point it at
+The app uses `https://www.technovashardauniversity.in` by default. To point it at
 another server, create `mobile/.env` with `EXPO_PUBLIC_API_URL=https://...`.
 
 ## Installable builds (EAS)

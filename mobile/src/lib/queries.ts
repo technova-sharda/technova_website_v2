@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
-import type { Certificate, EventDetail, Home, LeaderRow, Me, AppEvent, Ticket } from './types'
+import type { AdminEventRow, AdminOverview, AppEvent, Certificate, Club, ClubDetail, EventDetail, Home, LeaderRow, Me, Team, Ticket } from './types'
 
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/mobile/v1/me') })
 export const useHome = () => useQuery({ queryKey: ['home'], queryFn: () => api<Home>('/api/mobile/v1/home') })
@@ -33,3 +33,29 @@ export const useAttendees = (eventId: string | null) => useQuery({
   queryKey: ['attendees', eventId], enabled: !!eventId, refetchInterval: 45_000,
   queryFn: () => api<{ attendees: Attendee[]; eventDaysList: string[]; isMultiDay: boolean }>(`/api/events/${eventId}/attendees`),
 })
+
+export const useClubs = () => useQuery({ queryKey: ['clubs'], staleTime: 5 * 60_000, queryFn: () => api<{ clubs: Club[] }>('/api/mobile/v1/clubs').then(r => r.clubs) })
+export const useClub = (id: string) => useQuery({ queryKey: ['club', id], staleTime: 5 * 60_000, queryFn: () => api<{ club: ClubDetail }>(`/api/mobile/v1/clubs/${id}`).then(r => r.club) })
+export const useTeam = () => useQuery({ queryKey: ['team'], staleTime: 10 * 60_000, queryFn: () => api<Team>('/api/mobile/v1/team') })
+
+// ── super admins ──
+export const useAdminOverview = (enabled: boolean) => useQuery({ queryKey: ['admin-overview'], enabled, queryFn: () => api<AdminOverview>('/api/mobile/v1/admin/overview') })
+export const useAdminEvents = (enabled: boolean) => useQuery({ queryKey: ['admin-events'], enabled, queryFn: () => api<{ events: AdminEventRow[] }>('/api/mobile/v1/admin/events').then(r => r.events) })
+export function useSetRegistrationsClosed() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { id: string; closed: boolean }) => api(`/api/mobile/v1/admin/events/${v.id}/registrations`, { method: 'POST', body: { closed: v.closed } }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['admin-events'] }); void qc.invalidateQueries({ queryKey: ['events'] }) },
+  })
+}
+
+/** Warm every tab right after sign-in so switching tabs is instant. */
+export function prefetchAll(qc: ReturnType<typeof useQueryClient>, staff: { superAdmin: boolean }) {
+  const get = <T,>(key: unknown[], path: string) => qc.prefetchQuery({ queryKey: key, queryFn: () => api<T>(path) })
+  void get(['home'], '/api/mobile/v1/home')
+  void get(['me'], '/api/mobile/v1/me')
+  void qc.prefetchQuery({ queryKey: ['events', 'upcoming', ''], queryFn: () => api<{ events: AppEvent[] }>('/api/mobile/v1/events?scope=upcoming&q=').then(r => r.events) })
+  void qc.prefetchQuery({ queryKey: ['tickets'], queryFn: () => api<{ tickets: Ticket[] }>('/api/mobile/v1/tickets').then(r => r.tickets) })
+  void qc.prefetchQuery({ queryKey: ['clubs'], queryFn: () => api<{ clubs: Club[] }>('/api/mobile/v1/clubs').then(r => r.clubs) })
+  if (staff.superAdmin) void get(['admin-overview'], '/api/mobile/v1/admin/overview')
+}

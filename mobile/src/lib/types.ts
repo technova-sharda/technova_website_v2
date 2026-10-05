@@ -21,3 +21,24 @@ export type Me = {
 export type Certificate = { id: string; type: string; issuedAt: string; event: { id: string; title: string; date: string; club: string | null }; verifyUrl: string; downloadPath: string }
 export type LeaderRow = { id: string; name: string; image: string | null; xp: number; rank: number; isMe: boolean }
 export type Home = { nextTicket: Ticket | null; live: AppEvent[]; upcoming: AppEvent[] }
+
+export type Club = { id: string; name: string; description: string; logo: string | null; members: number; upcoming: number; totalEvents: number }
+export type Person = { id: string; name: string; role: string | null; photo: string | null; email: string | null; phone: string | null; linkedin: string | null }
+export type ClubDetail = {
+  id: string; name: string; description: string; logo: string | null
+  links: { linkedin: string | null; instagram: string | null; email: string | null; web: string }
+  members: Person[]; upcoming: AppEvent[]; past: AppEvent[]
+}
+export type Team = { mentors: { name: string; role: string; quote: string | null; photo: string | null }[]; executives: Person[]; contact: { email?: string; reportUrl: string; website: string } }
+export type AdminBrief = { id: string; title: string; start: string; phase: Phase; capacity: number | null; registered: number; attended: number; attendanceRecorded: boolean; turnoutPct: number; rating: number | null }
+export type AdminOverview = {
+  kpis: { liveAndUpcoming: number; live: number; regs30: number; change: number | null; avgTurnout: number | null; avgRating: string | null; ratingCount: number; ratingScope: string }
+  totals: { students: number; events: number; registrations: number }
+  perDay: { day: string; count: number }[]
+  todos: { kind: string; eventId: string; title: string; detail: string }[]
+  nextUp: AdminBrief[]; recent: AdminBrief[]
+}
+export type AdminEventRow = {
+  id: string; title: string; slug: string | null; banner: string | null; club: string | null; phase: Phase; startTime: string; when: string; where: string
+  capacity: number | null; registrations: number; attended: number; registrationsClosed: boolean
+}

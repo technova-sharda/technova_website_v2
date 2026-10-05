@@ -4,7 +4,7 @@
  * same rules apply: one check-in per day, XP awarded once, paid tickets only.
  */
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Haptics from 'expo-haptics'
@@ -15,6 +15,7 @@ import { api, ApiError } from '@/lib/api'
 import { useAttendees, useLiveEvents, type Attendee } from '@/lib/queries'
 import { useSession } from '@/lib/session'
 import { Button, Empty, Icon, Loading, Segmented, T } from '@/components/ui'
+import { fmtWhen } from '@/lib/format'
 
 type Result = { kind: 'success' | 'already' | 'error'; name: string; message: string }
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
@@ -26,6 +27,8 @@ export default function ScanScreen() {
   const live = useLiveEvents(staff)
   const [eventId, setEventId] = useState<string | null>(null)
   const current = eventId ?? live.data?.[0]?.id ?? null
+  const currentEvent = live.data?.find(e => e.id === current)
+  const [picking, setPicking] = useState(false)
   const attendees = useAttendees(current)
   const qc = useQueryClient()
   const [mode, setMode] = useState<'camera' | 'list'>('camera')
@@ -104,25 +107,39 @@ export default function ScanScreen() {
   if (!staff) return <SafeAreaView style={styles.page}><Empty title="Scanner is for event staff" /></SafeAreaView>
 
   return (
-    <SafeAreaView edges={['top']} style={styles.page}>
-      <View style={{ paddingHorizontal: 16, gap: 12, paddingBottom: 12 }}>
-        <T v="title">Check-in</T>
+    <SafeAreaView edges={[]} style={styles.page}>
+      <View style={{ paddingHorizontal: 16, gap: 12, paddingBottom: 12, paddingTop: 8 }}>
         {live.isLoading ? <Loading /> : !live.data?.length ? (
           <Empty icon={{ ios: 'qrcode.viewfinder', android: 'qr_code_scanner' }} title="No live event" hint="Events appear here from when they're published until they end." />
         ) : (
           <>
-            {live.data.length > 1 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {/* Which event is being checked in: always visible */}
+            <View style={styles.eventCard}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <T v="label">Scanning for</T>
+                <T v="h3" numberOfLines={2}>{currentEvent?.title ?? 'Pick an event'}</T>
+                {currentEvent && <T v="small">{fmtWhen(currentEvent.start_time, currentEvent.end_time ?? null)}</T>}
+              </View>
+              {live.data.length > 1 && (
+                <Pressable onPress={() => setPicking(v => !v)} style={styles.change}>
+                  <T v="small" style={{ color: C.text, fontWeight: '700' }}>{picking ? 'Done' : 'Change'}</T>
+                </Pressable>
+              )}
+            </View>
+            {picking && (
+              <View style={{ gap: 8 }}>
                 {live.data.map(e => (
-                  <Pressable key={e.id} onPress={() => setEventId(e.id)} style={[styles.chip, current === e.id && { borderColor: C.amber, backgroundColor: C.amberSoft }]}>
-                    <T v="small" style={{ color: current === e.id ? C.amber : C.textDim, fontWeight: '700' }} numberOfLines={1}>{e.title}</T>
+                  <Pressable key={e.id} onPress={() => { setEventId(e.id); setPicking(false); setRecent([]) }}
+                    style={[styles.option, current === e.id && { borderColor: C.amber, backgroundColor: C.amberSoft }]}>
+                    <T style={{ fontWeight: '600', color: current === e.id ? C.amber : C.text }} numberOfLines={1}>{e.title}</T>
+                    <T v="small">{fmtWhen(e.start_time, e.end_time ?? null)}</T>
                   </Pressable>
                 ))}
-              </ScrollView>
+              </View>
             )}
             <View style={{ gap: 6 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <T><T v="h2" style={{ color: C.green }}>{checked}</T><T v="dim"> / {list.length} checked in{multi ? ' today' : ''}</T></T>
+                <T><T v="h3" style={{ color: C.green }}>{checked}</T><T v="dim"> / {list.length} checked in{multi ? ' today' : ''}</T></T>
                 <T v="small">{list.length - checked} to go</T>
               </View>
               <View style={{ height: 8, borderRadius: 4, backgroundColor: C.surface2, overflow: 'hidden' }}>
@@ -139,7 +156,7 @@ export default function ScanScreen() {
           {!permission ? <Loading /> : !permission.granted ? (
             <View style={{ gap: 12, paddingTop: 24 }}>
               <T v="dim" style={{ textAlign: 'center' }}>Allow the camera to scan tickets.</T>
-              <Button title="Allow camera" onPress={requestPermission} />
+              <Button title="Allow camera" variant="primary" onPress={requestPermission} />
             </View>
           ) : (
             <View style={styles.camera}>
@@ -188,7 +205,7 @@ export default function ScanScreen() {
                       <T v="small" numberOfLines={1}>{a.email}</T>
                     </View>
                     {inNow ? <Icon ios="checkmark.circle.fill" android="check_circle" size={26} color={C.green} /> : (
-                      <Button title="Check in" onPress={() => void manual(a)} loading={acting === a.id} style={{ minHeight: 40, paddingHorizontal: 14 }} />
+                      <Button title="Check in" size="sm" variant="primary" onPress={() => void manual(a)} loading={acting === a.id} />
                     )}
                   </View>
                 )
@@ -202,10 +219,12 @@ export default function ScanScreen() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg },
-  chip: { borderWidth: 1, borderColor: C.border, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, maxWidth: 220 },
-  camera: { width: '100%', aspectRatio: 1, borderRadius: R.xl, overflow: 'hidden', backgroundColor: '#000' },
-  frame: { position: 'absolute', top: '14%', left: '14%', right: '14%', bottom: '14%', borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)', borderRadius: 24 },
-  result: { position: 'absolute', left: 12, right: 12, bottom: 12, borderRadius: 18, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  eventCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderLeftWidth: 3, borderLeftColor: C.accent, borderRadius: R.md, padding: 12 },
+  change: { borderWidth: 1, borderColor: C.borderStrong, borderRadius: R.sm, paddingHorizontal: 12, paddingVertical: 7 },
+  option: { borderWidth: 1, borderColor: C.border, borderRadius: R.md, padding: 12, gap: 2, backgroundColor: C.surface },
+  camera: { width: '100%', aspectRatio: 1, borderRadius: R.md, overflow: 'hidden', backgroundColor: '#000' },
+  frame: { position: 'absolute', top: '14%', left: '14%', right: '14%', bottom: '14%', borderWidth: 2, borderColor: 'rgba(245,166,35,0.9)', borderRadius: 24 },
+  result: { position: 'absolute', left: 10, right: 10, bottom: 10, borderRadius: 18, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surface, borderRadius: R.md, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: R.md, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface },
 })
