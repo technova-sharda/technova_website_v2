@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { istDateKey, spansMultipleIstDays } from '@/lib/dates/ist'
 import { auth } from '@/lib/auth'
+import { fetchAllRows, fetchInChunks } from '@/lib/supabase/fetch-all'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,12 +24,14 @@ export async function GET(
         const { searchParams } = new URL(req.url)
         const dayFilter = searchParams.get('day') // Format: YYYY-MM-DD
 
-        // Fetch event details for multi-day info
-        const { data: event } = await supabase
-            .from('events')
-            .select('start_time, end_time, is_multi_day, excluded_dates')
-            .eq('id', eventId)
-            .single()
+        // Event, registrations and check-ins in parallel; paged so big events aren't cut at 1,000 rows
+        const [{ data: event }, regsRes, checkinsRes] = await Promise.all([
+            supabase.from('events').select('start_time, end_time, is_multi_day, excluded_dates').eq('id', eventId).single(),
+            fetchAllRows<{ id: string; user_id: string; attended: boolean; created_at: string }>((f, t) =>
+                supabase.from('registrations').select('id, user_id, attended, created_at').eq('event_id', eventId).order('created_at', { ascending: false }).order('id').range(f, t)),
+            fetchAllRows<{ user_id: string; checkin_date: string; xp_awarded: number }>((f, t) =>
+                supabase.from('daily_checkins').select('id, user_id, checkin_date, xp_awarded').eq('event_id', eventId).order('id').range(f, t)),
+        ])
 
         // Calculate event days
         let eventDays = 1
@@ -59,15 +62,9 @@ export async function GET(
             }
         }
 
-        // Fetch all registrations for this event with user details
-        const { data: registrations, error: regError } = await supabase
-            .from('registrations')
-            .select('id, user_id, attended, created_at')
-            .eq('event_id', eventId)
-            .order('created_at', { ascending: false })
-
-        if (regError) {
-            console.error('Error fetching registrations:', regError)
+        const registrations = regsRes.data
+        if (regsRes.error) {
+            console.error('Error fetching registrations:', regsRes.error)
             return NextResponse.json({ error: 'Failed to fetch registrations' }, { status: 500 })
         }
 
@@ -83,21 +80,10 @@ export async function GET(
         // Get user details from next_auth schema
         const userIds = registrations.map(r => r.user_id)
 
-        const { data: users, error: userError } = await supabase
-            .schema('next_auth' as unknown as 'public')
-            .from('users')
-            .select('id, name, email, image')
-            .in('id', userIds)
-
-        if (userError) {
-            console.error('Error fetching users:', userError)
-        }
-
-        // Fetch daily check-ins for all users in this event
-        const { data: dailyCheckins } = await supabase
-            .from('daily_checkins')
-            .select('user_id, checkin_date, xp_awarded')
-            .eq('event_id', eventId)
+        const { data: users, error: userError } = await fetchInChunks<{ id: string; name: string | null; email: string | null; image: string | null }>(userIds, chunk =>
+            supabase.schema('next_auth' as unknown as 'public').from('users').select('id, name, email, image').in('id', chunk))
+        if (userError) console.error('Error fetching users:', userError)
+        const dailyCheckins = checkinsRes.data
 
         // Create check-in map: userId -> { date -> xp }
         const checkinMap = new Map<string, Map<string, number>>()

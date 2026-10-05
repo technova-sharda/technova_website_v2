@@ -5,6 +5,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { Award, ExternalLink, Loader2, MailWarning, Search } from "lucide-react"
 import { searchCertificates, type CertificateHit } from "@/lib/actions/certificates-hub"
+import { PageHeader } from "@/components/admin/ui"
 
 export type HubEventRow = {
     id: string; title: string; date: string; club: string | null
@@ -55,12 +56,9 @@ export function CertificatesHub({ rows, missing, generatedAt }: {
     }), { valid: 0, pending: 0, revoked: 0, notEmailed: 0, downloads: 0 })
 
     return (
-        <div className="min-h-screen bg-black p-4 sm:p-6 md:p-8">
+        <div>
             <div className="max-w-6xl space-y-6">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3"><Award className="w-8 h-8 text-violet-400" /> Certificates</h1>
-                    <p className="text-gray-400 mt-1">Every event&apos;s certificates in one place. Sending and editing stay on each event&apos;s certificate page.</p>
-                </div>
+                <PageHeader icon={Award} title="Certificates" tone="violet" description="Every event's certificates in one place. Sending and editing stay on each event's certificate page." />
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     <Stat label="Issued (valid)" value={total.valid} />

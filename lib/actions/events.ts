@@ -272,23 +272,35 @@ export async function updateEvent(formData: FormData) {
     return { success: true, message: "Event updated successfully!", slug }
 }
 
-export async function deleteEvent(id: string) {
+/**
+ * Deleting an event also deletes its registrations, check-ins, feedback,
+ * certificates and XP awards (foreign keys cascade). So: super admins only,
+ * and when the event has any registrations the exact event name must be typed.
+ */
+export async function deleteEvent(id: string, confirmTitle?: string): Promise<{ success: true } | { error: string }> {
     const session = await auth()
-    if (!session || session.user.role === 'student') {
-        throw new Error("Unauthorized")
-    }
+    if (session?.user?.role !== 'super_admin') return { error: "Only super admins can delete events" }
 
     const supabase = await getSupabase()
-    const { error } = await supabase.from('events').delete().eq('id', id)
+    const [{ data: event }, { count }] = await Promise.all([
+        supabase.from('events').select('id, title').eq('id', id).maybeSingle(),
+        supabase.from('registrations').select('id', { count: 'exact', head: true }).eq('event_id', id),
+    ])
+    if (!event) return { error: "Event not found" }
+    if ((count ?? 0) > 0 && (confirmTitle ?? "").trim() !== String(event.title).trim()) {
+        return { error: "Type the event name exactly to confirm" }
+    }
 
+    const { error } = await supabase.from('events').delete().eq('id', id)
     if (error) {
         console.error("Delete Event Error:", error)
-        throw new Error("Failed to delete event")
+        return { error: "Failed to delete event" }
     }
 
     revalidatePath("/events")
     revalidateTag("public-events", { expire: 0 })
     revalidatePath("/admin/events")
+    return { success: true }
 }
 
 export async function togglePastEvent(eventId: string) {

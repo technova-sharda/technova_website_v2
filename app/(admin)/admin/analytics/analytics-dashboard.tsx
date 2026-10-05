@@ -7,6 +7,7 @@ import {
 } from "recharts"
 import { AlertTriangle, ArrowUpDown, BarChart3, CalendarDays, FileDown, Star, UserCheck, Users } from "lucide-react"
 import type { EventSummary } from "@/lib/analytics/metrics"
+import { PageHeader } from "@/components/admin/ui"
 
 const AMBER = "#F5A623", INDIGO = "#6366F1", GREEN = "#22C55E", GRID = "#27272A", MUTED = "#71717A"
 const PALETTE = [AMBER, INDIGO, GREEN, "#EC4899", "#06B6D4", "#A855F7", "#F97316", "#84CC16"]
@@ -68,15 +69,9 @@ export function AnalyticsDashboard(props: {
     const monthly = props.monthly.map(m => ({ ...m, label: monthLabel(m.month) }))
 
     return (
-        <div className="min-h-screen bg-black p-4 sm:p-6 md:p-8">
+        <div>
             <div className="max-w-7xl space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3"><BarChart3 className="w-8 h-8 text-amber-400" /> Analytics</h1>
-                        <p className="text-gray-400 mt-1">Every number comes straight from the database. Students are counted anonymously.</p>
-                    </div>
-                    <p className="text-xs text-gray-500">Updated {new Date(props.generatedAt).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST · refreshes every 5 min</p>
-                </div>
+                <PageHeader icon={BarChart3} title="Analytics" description="Every number comes straight from the database. Students are counted anonymously." actions={<p className="text-xs text-gray-500">Updated {new Date(props.generatedAt).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })} IST · refreshes every 5 min</p>} />
 
                 {kpis.eventsWithoutAttendance > 0 && (
                     <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200 flex items-start gap-3">

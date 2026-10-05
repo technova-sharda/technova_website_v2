@@ -150,7 +150,7 @@ export function LeadershipClient({ members }: { members: any[] }) {
         return {
             ...m,
             ...meta,
-            imagePath: meta.imagePath || getMemberPhotoPath(m.name)
+            imagePath: m.photo_url || meta.imagePath || getMemberPhotoPath(m.name)
         }
     })), [members])
 

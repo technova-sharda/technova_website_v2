@@ -69,85 +69,63 @@ export async function POST(
         const isMultiDay = registration.events?.is_multi_day ||
             (eventStart && eventEnd && spansMultipleIstDays(eventStart, eventEnd))
 
-        // 3. For single-day events: block if already attended
-        // For multi-day events: allow re-checkins (awardDailyXP handles per-day deduplication)
-        if (!isMultiDay && registration.attended) {
-            const { data: existingUser } = await supabase
-                .schema('next_auth' as unknown as 'public')
-                .from('users')
-                .select('name')
-                .eq('id', registration.user_id)
-                .single()
+        // 3-6. Name, XP (per-day dedup) and attended flag, all at once.
+        // Marking attended is right either way: the student is here.
+        const nameQuery = supabase
+            .schema('next_auth' as unknown as 'public')
+            .from('users')
+            .select('name')
+            .eq('id', registration.user_id)
+            .maybeSingle()
 
+        // Single-day events: block if already attended (multi-day allows one check-in per day)
+        if (!isMultiDay && registration.attended) {
+            const { data: existingUser } = await nameQuery
             return NextResponse.json({
                 success: false,
                 message: 'Already checked in',
-                userName: existingUser?.name || 'Attendee'
+                userName: (existingUser as { name?: string } | null)?.name || 'Attendee'
             }, { status: 400 })
         }
 
-        // 4. Determine Check-in Date
-        // If checking in before event starts (e.g. early arrival), record as Day 1
+        // Early arrivals are recorded as Day 1
         let checkinDate = new Date()
         if (eventStart && checkinDate < eventStart) {
             checkinDate = new Date(eventStart)
         }
 
-        // 5. Award daily XP for attendance (handles per-day deduplication for multi-day events)
-        const xpResult = await awardDailyXP(registration.user_id, eventId, {
-            event_type: registration.events?.event_type,
-            difficulty_level: registration.events?.difficulty_level,
-            start_time: registration.events?.start_time,
-            end_time: registration.events?.end_time,
-            is_multi_day: isMultiDay
-        }, checkinDate)
+        const [xpResult, attendedUpdate, { data: user }] = await Promise.all([
+            awardDailyXP(registration.user_id, eventId, {
+                event_type: registration.events?.event_type,
+                difficulty_level: registration.events?.difficulty_level,
+                start_time: registration.events?.start_time,
+                end_time: registration.events?.end_time,
+                is_multi_day: isMultiDay
+            }, checkinDate),
+            registration.attended ? Promise.resolve({ error: null }) : supabase.from('registrations').update({ attended: true }).eq('id', registration.id),
+            nameQuery,
+        ])
+        if (attendedUpdate.error) console.error('Attendance update error:', attendedUpdate.error)
+        const userName = (user as { name?: string } | null)?.name || 'Attendee'
 
-        // Check if already checked in today (for multi-day events)
         if (!xpResult.success && xpResult.message?.includes('Already checked in')) {
-            const { data: existingUser } = await supabase
-                .schema('next_auth' as unknown as 'public')
-                .from('users')
-                .select('name')
-                .eq('id', registration.user_id)
-                .single()
-
             return NextResponse.json({
                 success: false,
                 message: isMultiDay ? 'Already checked in today' : 'Already checked in',
-                userName: existingUser?.name || 'Attendee',
+                userName,
                 daysCheckedIn: xpResult.daysCheckedIn,
                 remainingDays: xpResult.remainingDays,
                 eventDays: xpResult.eventDays
             }, { status: 400 })
         }
 
-        // 5. Mark as attended (first time only)
-        if (!registration.attended) {
-            const { error: updateError } = await supabase
-                .from('registrations')
-                .update({ attended: true })
-                .eq('id', registration.id)
-
-            if (updateError) {
-                console.error('Attendance update error:', updateError)
-                // Continue even if update fails - XP was awarded
-            }
-        }
-
-        // 6. Get User Name from next_auth schema
-        const { data: user } = await supabase
-            .schema('next_auth' as unknown as 'public')
-            .from('users')
-            .select('name')
-            .eq('id', registration.user_id)
-            .single()
-
         return NextResponse.json({
             success: true,
             message: isMultiDay
                 ? `Day ${xpResult.daysCheckedIn} check-in successful!`
                 : 'Manual check-in successful',
-            userName: user?.name || 'Attendee',
+            userName,
+            userId: registration.user_id,
             xpAwarded: xpResult.xpAwarded,
             xpMessage: xpResult.message,
             // Daily XP distribution info

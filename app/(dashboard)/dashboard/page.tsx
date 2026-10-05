@@ -1,13 +1,14 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowRight, Award, Calendar, CalendarPlus, CheckCircle2, MapPin, Ticket, Trophy, Video, Zap } from "lucide-react"
+import { ArrowRight, Award, Calendar, CalendarPlus, CheckCircle2, MapPin, Ticket, Trophy, Users, Video, Zap } from "lucide-react"
 import { getMyEvents, splitMyEvents, type MyEvent } from "@/lib/data/student-dashboard"
 import { getUserRank } from "@/lib/actions/leaderboard"
 import { getCachedPublicEvents } from "@/lib/data/public-cache"
 import { googleCalendarUrl, toCalendarEntry } from "@/lib/calendar/event-calendar"
 import { formatDateShort, formatTime } from "@/lib/utils"
 import { BannerImage } from "@/components/ui/banner-image"
+import { getClubAccess } from "@/lib/clubs/permissions"
 
 export const metadata = { title: "Dashboard" }
 
@@ -38,11 +39,13 @@ export default async function DashboardPage() {
     if (!session?.user?.id) redirect("/login")
     const userId = session.user.id
 
-    const [myEvents, rank, publicEvents] = await Promise.all([
+    const [myEvents, rank, publicEvents, clubAccess] = await Promise.all([
         getMyEvents(userId),
         getUserRank(userId).catch(() => null),
         getCachedPublicEvents(),
+        getClubAccess(session.user.email).catch(() => ({ global: false, clubIds: [] as string[] })),
     ])
+    const managesClubs = clubAccess.global || clubAccess.clubIds.length > 0
 
     const { upcoming, past, suggestions } = splitMyEvents(myEvents, publicEvents)
     const attendedCount = rank?.eventsAttended ?? past.filter(m => m.attended).length
@@ -61,6 +64,20 @@ export default async function DashboardPage() {
                     Explore Events <ArrowRight className="w-4 h-4" />
                 </Link>
             </div>
+
+            {/* Club leads, co-leads and Technova's President / VP / Tech Lead */}
+            {managesClubs && (
+                <Link href="/club-management" className="flex items-center justify-between gap-4 p-4 md:p-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/15 transition-colors">
+                    <span className="flex items-center gap-3">
+                        <span className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0"><Users className="w-5 h-5" /></span>
+                        <span>
+                            <span className="block font-semibold text-white">Club Management</span>
+                            <span className="block text-sm text-amber-100/70">{clubAccess.global ? "Manage every club's logo, coordinators and photos" : "Manage your club's logo, coordinators and photos"}</span>
+                        </span>
+                    </span>
+                    <ArrowRight className="w-5 h-5 text-amber-300 shrink-0" />
+                </Link>
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 <StatCard icon={Trophy} label="My XP" value={rank?.xp_points ?? session?.user.xp_points ?? 0} hint="Earn more by attending events" accent="bg-blue-600/30 text-blue-400" />

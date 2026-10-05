@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Crown, History, Loader2, Search, ShieldCheck, ScanLine, UserMinus, Users } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { searchUsersForRole, setUserRole, type ManagedRole, type RoleChange, type RoleUser } from "@/lib/actions/roles"
+import { PageHeader } from "@/components/admin/ui"
 
 const ROLE_INFO: Record<ManagedRole, { label: string; help: string; badge: string }> = {
     super_admin: { label: "Super Admin", help: "Full admin panel, including this page", badge: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
@@ -135,15 +136,9 @@ export function RolesManager({ holders, changes, currentUserId }: { holders: Rol
     const showResults = query.trim().length >= 2
 
     return (
-        <div className="min-h-screen bg-black p-4 sm:p-6 md:p-8">
-            <div className="relative space-y-8 max-w-5xl">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
-                        <ShieldCheck className="w-8 h-8 text-amber-400" />
-                        Admin Roles
-                    </h1>
-                    <p className="text-gray-400 mt-1">Give or take away admin access. Changes apply on the person&apos;s next page load; nobody needs to sign out.</p>
-                </div>
+        <div>
+            <div className="space-y-6 max-w-5xl">
+                <PageHeader icon={ShieldCheck} title="Admin Roles" description="Give or take away admin access. Changes apply on the person's next page load; nobody needs to sign out." />
 
                 <div className="grid sm:grid-cols-3 gap-3">
                     {([["super_admin", Crown], ["admin", ScanLine], ["student", Users]] as const).map(([r, Icon]) => (

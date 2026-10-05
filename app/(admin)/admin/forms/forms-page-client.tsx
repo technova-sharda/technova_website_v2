@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Trash2, Settings, ArrowRight, FileText, Users, Calendar, Loader2, Sparkles, Copy, Globe } from "lucide-react"
+import { Trash2, Settings, ArrowRight, FileText, Users, Calendar, Loader2, Copy } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { EmptyState, PageHeader } from "@/components/admin/ui"
 import Link from "next/link"
 import { deleteForm, duplicateForm } from "@/lib/actions/forms"
 import { toast } from "sonner"
@@ -10,7 +11,8 @@ import { useRouter } from "next/navigation"
 import { CreateFormDialog } from "./create-form-dialog"
 
 function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("en-US", {
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+        timeZone: "Asia/Kolkata",
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -22,12 +24,13 @@ export function FormsPageClient({ forms: initialForms }: { forms: any[] }) {
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
     const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
+    const [typed, setTyped] = useState("")
     const router = useRouter()
 
     async function handleDuplicate(id: string) {
         setDuplicatingId(id)
         try {
-            const result = await duplicateForm(id)
+            await duplicateForm(id)
             toast.success("Form duplicated!")
             router.refresh()
         } catch (err: any) {
@@ -44,6 +47,7 @@ export function FormsPageClient({ forms: initialForms }: { forms: any[] }) {
             setForms(forms.filter(f => f.id !== id))
             toast.success("Form deleted")
             setConfirmDeleteId(null)
+            setTyped("")
         } catch (err: any) {
             toast.error(err.message || "Failed to delete form")
         } finally {
@@ -51,203 +55,89 @@ export function FormsPageClient({ forms: initialForms }: { forms: any[] }) {
         }
     }
 
+    const toDelete = forms.find(f => f.id === confirmDeleteId) ?? null
+    const status = (f: any) => !f.is_active
+        ? { label: "Closed", cls: "border-white/10 bg-white/5 text-gray-400" }
+        : f.is_published
+            ? { label: "Accepting responses", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" }
+            : { label: "Not published", cls: "border-amber-500/30 bg-amber-500/10 text-amber-300" }
+
     return (
-        <div className="pb-12">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-                className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10"
-            >
-                <div>
-                    <motion.h1
-                        className="text-4xl font-bold tracking-tight text-white mb-2"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1, duration: 0.5 }}
-                    >
-                        Forms & Surveys
-                    </motion.h1>
-                    <motion.p
-                        className="text-[#a1a1aa] text-lg"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        Collect registrations, nominations, and feedback.
-                    </motion.p>
-                </div>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <CreateFormDialog />
-                </motion.div>
-            </motion.div>
+        <div className="space-y-6 pb-12">
+            <PageHeader icon={FileText} title="Forms & surveys" tone="blue" description="Registrations, nominations and feedback." actions={<CreateFormDialog />} />
 
-            {/* Grid of form cards */}
             {forms.length === 0 ? (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center min-h-[400px] rounded-3xl border-2 border-dashed border-[#27272a] bg-[#0a0a0b]/50 text-center p-12"
-                >
-                    <div className="w-20 h-20 rounded-full bg-[#1e1e22] flex items-center justify-center mb-6">
-                        <FileText className="w-10 h-10 text-[#3b82f6]" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-3">No forms yet</h3>
-                    <p className="text-[#71717a] max-w-md mb-8 text-lg">
-                        Create your first form to start collecting responses, feedback, and nominations from your community.
-                    </p>
-                    <CreateFormDialog />
-                </motion.div>
+                <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+                    <EmptyState icon={FileText} title="No forms yet" hint="Create a form to collect responses, feedback and nominations." action={<CreateFormDialog />} />
+                </div>
             ) : (
-                <motion.div
-                    className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                        hidden: {},
-                        visible: { transition: { staggerChildren: 0.08 } },
-                    }}
-                >
-                    <AnimatePresence mode="popLayout">
-                        {forms.map((form) => (
-                            <motion.div
-                                key={form.id}
-                                layout
-                                variants={{
-                                    hidden: { opacity: 0, y: 30, scale: 0.95 },
-                                    visible: { opacity: 1, y: 0, scale: 1 },
-                                }}
-                                exit={{ opacity: 0, scale: 0.9, y: -20, transition: { duration: 0.3 } }}
-                                transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-                                className="group relative"
-                            >
-                                {/* Hover glow */}
-                                <div className="absolute -inset-1 bg-gradient-to-br from-[#3b82f6]/20 to-[#8b5cf6]/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                                <div className="relative flex flex-col h-full bg-[#141416] border border-[#27272a] rounded-2xl overflow-hidden transition-all duration-300 group-hover:border-[#3f3f46] group-hover:-translate-y-1">
-                                    {/* Card content */}
-                                    <div className="p-6 flex-1 flex flex-col">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="p-3 rounded-xl bg-[#3b82f6]/10">
-                                                <FileText className="w-6 h-6 text-[#3b82f6]" />
-                                            </div>
-                                            <div className="flex gap-1.5">
-                                                {form.is_published && (
-                                                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 flex items-center gap-1">
-                                                        <Globe className="w-3 h-3" /> Live
-                                                    </span>
-                                                )}
-                                                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${form.is_active
-                                                    ? "bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20"
-                                                    : "bg-[#27272a] text-[#71717a] border border-[#3f3f46]"
-                                                    }`}>
-                                                    {form.is_active ? "Active" : "Closed"}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-[#60a5fa] transition-colors">
-                                            {form.title}
-                                        </h3>
-
-                                        <p className="text-sm text-[#a1a1aa] line-clamp-2 mb-6 flex-1">
-                                            {form.description || "No description provided."}
-                                        </p>
-
-                                        <div className="flex flex-col gap-2 pt-4 border-t border-[#1e1e22]">
-                                            <div className="flex items-center text-sm text-[#a1a1aa]">
-                                                <Users className="w-4 h-4 mr-3 text-[#3b82f6]/70" />
-                                                <span className="font-medium text-white mr-1">{form.response_count}</span> responses
-                                            </div>
-                                            {form.deadline && (
-                                                <div className="flex items-center text-sm text-[#a1a1aa]">
-                                                    <Calendar className="w-4 h-4 mr-3 text-[#8b5cf6]/70" />
-                                                    Due {formatDate(form.deadline)}
-                                                </div>
-                                            )}
-                                        </div>
+                <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {forms.map((form) => {
+                        const st = status(form)
+                        return (
+                            <li key={form.id} className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] transition-colors hover:border-white/20">
+                                <div className="flex flex-1 flex-col p-4 sm:p-5">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <Link href={`/admin/forms/${form.id}/responses`} className="line-clamp-2 font-semibold text-white hover:text-amber-300">{form.title}</Link>
+                                        <span className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${st.cls}`}>{st.label}</span>
                                     </div>
-
-                                    {/* Action bar */}
-                                    <div className="p-4 bg-[#0f0f11] border-t border-[#1e1e22] flex gap-2 items-center">
-                                        <Link
-                                            href={`/admin/forms/${form.id}/edit`}
-                                            className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1e1e22] hover:bg-[#27272a] text-[#a1a1aa] hover:text-white text-sm font-medium transition-all"
-                                        >
-                                            <Settings className="w-4 h-4" />
-                                            Builder
-                                        </Link>
-                                        <Link
-                                            href={`/admin/forms/${form.id}/responses`}
-                                            className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)]"
-                                        >
-                                            Results
-                                            <ArrowRight className="w-4 h-4" />
-                                        </Link>
-
-                                        {/* Duplicate button */}
-                                        <button
-                                            onClick={() => handleDuplicate(form.id)}
-                                            disabled={duplicatingId === form.id}
-                                            className="h-10 w-10 flex items-center justify-center rounded-xl text-[#71717a] hover:text-[#3b82f6] hover:bg-[#3b82f6]/10 transition-all shrink-0"
-                                            title="Duplicate form"
-                                        >
-                                            {duplicatingId === form.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
-                                        </button>
-
-                                        {/* Delete button */}
-                                        <AnimatePresence mode="wait">
-                                            {confirmDeleteId === form.id ? (
-                                                <motion.div
-                                                    key="confirm"
-                                                    initial={{ opacity: 0, width: 0 }}
-                                                    animate={{ opacity: 1, width: "auto" }}
-                                                    exit={{ opacity: 0, width: 0 }}
-                                                    className="flex gap-1 overflow-hidden"
-                                                >
-                                                    <button
-                                                        onClick={() => handleDelete(form.id)}
-                                                        disabled={deletingId === form.id}
-                                                        className="h-10 px-3 rounded-xl bg-[#dc2626] hover:bg-[#b91c1c] text-white text-xs font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
-                                                    >
-                                                        {deletingId === form.id ? (
-                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                        ) : (
-                                                            "Yes"
-                                                        )}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setConfirmDeleteId(null)}
-                                                        className="h-10 px-3 rounded-xl bg-[#1e1e22] hover:bg-[#27272a] text-[#a1a1aa] text-xs font-semibold transition-all whitespace-nowrap"
-                                                    >
-                                                        No
-                                                    </button>
-                                                </motion.div>
-                                            ) : (
-                                                <motion.button
-                                                    key="trash"
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    onClick={() => setConfirmDeleteId(form.id)}
-                                                    className="h-10 w-10 flex items-center justify-center rounded-xl text-[#71717a] hover:text-[#ef4444] hover:bg-[#dc2626]/10 transition-all shrink-0"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </motion.button>
-                                            )}
-                                        </AnimatePresence>
+                                    <p className="mt-2 line-clamp-2 flex-1 text-sm text-gray-400">{form.description || "No description."}</p>
+                                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
+                                        <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /><b className="font-semibold text-white">{form.response_count}</b> responses</span>
+                                        {form.deadline && <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />Due {formatDate(form.deadline)}</span>}
                                     </div>
                                 </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </motion.div>
+                                <div className="flex items-center gap-2 border-t border-white/5 p-3">
+                                    <Link href={`/admin/forms/${form.id}/responses`} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400">
+                                        Responses <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                    <Link href={`/admin/forms/${form.id}/edit`} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-200 hover:bg-white/5">
+                                        <Settings className="h-4 w-4" /> Edit form
+                                    </Link>
+                                    <button onClick={() => handleDuplicate(form.id)} disabled={duplicatingId === form.id} title="Duplicate form" aria-label="Duplicate form"
+                                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-white/5 hover:text-white disabled:opacity-50">
+                                        {duplicatingId === form.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                                    </button>
+                                    <button onClick={() => setConfirmDeleteId(form.id)} title="Delete form" aria-label="Delete form"
+                                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-rose-500/10 hover:text-rose-400">
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </li>
+                        )
+                    })}
+                </ul>
             )}
+
+            <Dialog open={!!toDelete} onOpenChange={o => { if (!o && !deletingId) { setConfirmDeleteId(null); setTyped("") } }}>
+                <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md border-white/10 bg-zinc-950 text-white">
+                    <DialogHeader className="text-left">
+                        <DialogTitle>Delete this form?</DialogTitle>
+                        <DialogDescription className="text-gray-400">This can&apos;t be undone.</DialogDescription>
+                    </DialogHeader>
+                    {toDelete && (
+                        <div className="space-y-3 text-sm">
+                            <p className="font-medium text-white">{toDelete.title}</p>
+                            {toDelete.response_count > 0 && (
+                                <>
+                                    <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-rose-200">Its <b>{toDelete.response_count} responses</b> will be deleted too. Export them from Responses first if you need them.</p>
+                                    <label className="block space-y-1.5">
+                                        <span className="text-xs text-gray-400">Type the form name to confirm</span>
+                                        <input value={typed} onChange={e => setTyped(e.target.value)} placeholder={toDelete.title} autoFocus className="h-10 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 text-sm text-white placeholder:text-gray-700 focus:border-rose-500/50 focus:outline-none" />
+                                    </label>
+                                </>
+                            )}
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button onClick={() => { setConfirmDeleteId(null); setTyped("") }} disabled={!!deletingId} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-gray-200 hover:bg-white/5">Cancel</button>
+                                <button onClick={() => handleDelete(toDelete.id)} disabled={!!deletingId || (toDelete.response_count > 0 && typed.trim() !== String(toDelete.title).trim())}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 disabled:opacity-40">
+                                    {deletingId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete form
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

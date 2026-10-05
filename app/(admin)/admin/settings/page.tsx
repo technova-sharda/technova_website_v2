@@ -1,5 +1,6 @@
 import { addSponsorship, getSponsorships, deleteSponsorship } from "@/lib/actions/sponsorships";
 import { Trash2, IndianRupee, Settings, Plus, Building2, Calendar, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { PageHeader } from "@/components/admin/ui"
 
 export default async function SettingsPage() {
     const sponsorships = await getSponsorships();
@@ -10,27 +11,14 @@ export default async function SettingsPage() {
     const netBalance = totalIncome - totalDeductions;
 
     return (
-        <div className="min-h-screen bg-black p-6 md:p-8">
-            {/* Background Effects */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px]" />
-                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px]" />
-            </div>
-
-            <div className="relative space-y-8 max-w-5xl">
-                {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                        <Settings className="w-8 h-8 text-blue-400" />
-                        Admin Settings
-                    </h1>
-                    <p className="text-gray-400 mt-1">Manage sponsorships, expenses and platform settings</p>
-                </div>
+        <div>
+            <div className="space-y-6 max-w-5xl">
+                <PageHeader icon={Settings} title="Settings & finances" tone="blue" description="Sponsorships and expenses." />
 
                 {/* Financial Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Total Income */}
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-green-600/20 to-green-500/10 border border-green-500/30 backdrop-blur-xl">
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-green-600/20 to-green-500/10 border border-green-500/30">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-green-600/30 flex items-center justify-center">
                                 <TrendingUp className="w-7 h-7 text-green-400" />
@@ -43,7 +31,7 @@ export default async function SettingsPage() {
                     </div>
 
                     {/* Total Deductions */}
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-red-600/20 to-red-500/10 border border-red-500/30 backdrop-blur-xl">
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-red-600/20 to-red-500/10 border border-red-500/30">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-red-600/30 flex items-center justify-center">
                                 <TrendingDown className="w-7 h-7 text-red-400" />
@@ -56,7 +44,7 @@ export default async function SettingsPage() {
                     </div>
 
                     {/* Net Balance */}
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-500/10 border border-blue-500/30 backdrop-blur-xl">
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-500/10 border border-blue-500/30">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-blue-600/30 flex items-center justify-center">
                                 <IndianRupee className="w-7 h-7 text-blue-400" />

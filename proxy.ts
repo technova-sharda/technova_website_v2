@@ -68,7 +68,7 @@ export default auth((req) => {
 
     // Signed-out visitors to signed-in areas go straight to login. Without this the
     // page renders alongside its layout and runs its queries before the layout redirects.
-    const signedInArea = ['/admin', '/dashboard', '/profile', '/leaderboard'].some(p => pathname === p || pathname.startsWith(`${p}/`))
+    const signedInArea = ['/admin', '/dashboard', '/profile', '/leaderboard', '/club-management'].some(p => pathname === p || pathname.startsWith(`${p}/`))
     if (!isLoggedIn && signedInArea) {
         const login = new URL('/login', req.nextUrl)
         login.searchParams.set('callbackUrl', pathname)
@@ -88,6 +88,7 @@ export const config = {
         "/dashboard/:path*",
         "/profile/:path*",
         "/leaderboard",
+        "/club-management",
         "/user/:path*",
         "/events/:id",
         "/community/:path*",

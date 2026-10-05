@@ -35,7 +35,7 @@ export interface RegistrationField {
     optionRouting?: Record<string, string> // { "Option A": sectionId, "Option B": sectionId }
 }
 
-const FIELD_TYPES: { type: QuestionType; label: string; icon: any; color: string; bg: string }[] = [
+export const FIELD_TYPES: { type: QuestionType; label: string; icon: any; color: string; bg: string }[] = [
     { type: "text", label: "Short Text", icon: FileText, color: "#60a5fa", bg: "rgba(59,130,246,0.1)" },
     { type: "textarea", label: "Long Text", icon: AlignLeft, color: "#818cf8", bg: "rgba(129,140,248,0.1)" },
     { type: "number", label: "Number", icon: Hash, color: "#34d399", bg: "rgba(52,211,153,0.1)" },
@@ -47,7 +47,7 @@ const FIELD_TYPES: { type: QuestionType; label: string; icon: any; color: string
     { type: "section", label: "Section", icon: SeparatorHorizontal, color: "#94a3b8", bg: "rgba(148,163,184,0.1)" },
 ]
 
-function getFieldMeta(type: QuestionType) {
+export function getFieldMeta(type: QuestionType) {
     return FIELD_TYPES.find(f => f.type === type) || FIELD_TYPES[0]
 }
 
@@ -372,9 +372,14 @@ export function FormBuilderWrapper({ initialFields, formId }: FormBuilderProps) 
 // Individual Field Card
 // ============================================================
 
-function FieldCard({
-    field, index, sectionFields, updateField, removeField, addOption, updateOption, handleOptionPaste, removeOption, reorderOption, updateOptionRouting
+export function FieldCard({
+    field, index, sectionFields, updateField, removeField, addOption, updateOption, handleOptionPaste, removeOption, reorderOption, updateOptionRouting,
+    onDragHandle, footer,
 }: {
+    /** Pointer-down on the grip starts a drag (the rest of the card stays selectable). */
+    onDragHandle?: (e: React.PointerEvent) => void
+    /** Extra controls under the card (e.g. "Move to section"). */
+    footer?: React.ReactNode
     field: RegistrationField
     index: number
     sectionFields: RegistrationField[]
@@ -439,13 +444,15 @@ function FieldCard({
 
     // ===== Regular Field =====
     return (
-        <div className="bg-[#141416] border border-[#27272a] rounded-2xl overflow-hidden hover:border-[#3f3f46] transition-colors cursor-grab active:cursor-grabbing">
+        <div className={`bg-[#141416] border border-[#27272a] rounded-2xl overflow-hidden hover:border-[#3f3f46] transition-colors ${onDragHandle ? "" : "cursor-grab active:cursor-grabbing"}`}>
             <div className="h-0.5" style={{ backgroundColor: meta.color }} />
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
-                        <GripVertical className="w-5 h-5 text-[#3f3f46] cursor-grab" />
+                        <span onPointerDown={onDragHandle} className={`touch-none ${onDragHandle ? "cursor-grab active:cursor-grabbing p-1 -m-1 rounded hover:bg-white/5" : ""}`} aria-label="Drag to reorder">
+                            <GripVertical className="w-5 h-5 text-[#52525b]" />
+                        </span>
                         <span className="w-7 h-7 rounded-lg bg-[#1e1e22] text-[#a1a1aa] flex items-center justify-center text-xs font-bold">{index + 1}</span>
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold capitalize" style={{ backgroundColor: meta.bg, color: meta.color }}>
                             <Icon className="w-3.5 h-3.5" />
@@ -531,7 +538,7 @@ function FieldCard({
                         </label>
                         {field.options?.map((option, idx) => (
                             <div key={idx} className="space-y-2">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                                     <div className="flex flex-col shrink-0">
                                         <button type="button" onClick={() => reorderOption(field.id, idx, 'up')} disabled={idx === 0}
                                             className="w-5 h-4 flex items-center justify-center text-[#52525b] hover:text-white transition-all disabled:opacity-20" title="Move up">
@@ -546,13 +553,13 @@ function FieldCard({
                                     <input type="text" value={option} onChange={(e) => updateOption(field.id, idx, e.target.value)}
                                         onPaste={(e) => handleOptionPaste(field.id, idx, e)}
                                         placeholder={`Option ${idx + 1}`}
-                                        className="flex-1 h-9 px-3 rounded-lg bg-[#141416] border border-[#27272a] text-white text-sm placeholder:text-[#3f3f46] focus:border-[#a78bfa] outline-none transition-all" />
+                                        className="min-w-0 flex-1 h-9 px-3 rounded-lg bg-[#141416] border border-[#27272a] text-white text-sm placeholder:text-[#3f3f46] focus:border-[#a78bfa] outline-none transition-all" />
                                     {/* Routing: Go to section */}
                                     {sectionFields.length > 0 && field.type === "select" && (
                                         <select
                                             value={field.optionRouting?.[option] || "__none__"}
                                             onChange={(e) => updateOptionRouting(field.id, option, e.target.value)}
-                                            className="h-9 px-2 rounded-lg bg-[#141416] border border-[#27272a] text-[#a1a1aa] text-xs focus:border-[#a78bfa] outline-none max-w-[140px] truncate"
+                                            className="order-last h-9 w-full px-2 rounded-lg bg-[#141416] border border-[#27272a] text-[#a1a1aa] text-xs focus:border-[#a78bfa] outline-none truncate sm:order-none sm:w-auto sm:max-w-[160px]"
                                             title="Go to section"
                                         >
                                             <option value="__none__">Continue</option>
@@ -598,6 +605,7 @@ function FieldCard({
                         )}
                     </div>
                 )}
+                {footer && <div className="mt-4 border-t border-[#1e1e22] pt-3">{footer}</div>}
             </div>
         </div>
     )
