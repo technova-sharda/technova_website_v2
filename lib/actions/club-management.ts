@@ -105,9 +105,14 @@ async function toWebp(file: File, size: number, square: boolean) {
     if (!(file instanceof File) || file.size === 0) throw new Error("Choose an image")
     if (file.size > MAX_IMAGE_BYTES) throw new Error("Image is larger than 8 MB")
     const input = Buffer.from(await file.arrayBuffer())
-    return sharp(input, { failOn: "none" }).rotate()
-        .resize(square ? { width: size, height: size, fit: "cover", position: "attention" } : { width: size, height: size, fit: "inside", withoutEnlargement: true })
-        .webp({ quality: 84 }).toBuffer()
+    try {
+        return await sharp(input, { failOn: "none" }).rotate()
+            .resize(square ? { width: size, height: size, fit: "cover", position: "attention" } : { width: size, height: size, fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 84 }).toBuffer()
+    } catch {
+        // e.g. HEIC/HEIF photos from phone cameras, which sharp can't decode
+        throw new Error("This photo format isn't supported. Please upload a JPG, PNG or WebP image.")
+    }
 }
 
 export async function uploadClubLogo(clubId: string, formData: FormData): Promise<Result & { url?: string }> {

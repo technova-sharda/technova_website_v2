@@ -5,7 +5,7 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { Pressable, Text, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
-import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 
 const SPRING = { damping: 18, stiffness: 320, mass: 0.6 }
@@ -29,9 +29,17 @@ export function PressScale({ children, onPress, onLongPress, disabled, style, sc
   )
 }
 
-/** Rises and fades in when it first mounts; `index` staggers siblings. */
+/**
+ * Rises and fades in when it first mounts; `index` staggers siblings.
+ * Driven by a shared value rather than a layout `entering` animation: those can fail to
+ * start when a screen mounts during a navigation switch (e.g. right after sign-in) and
+ * leave the content at opacity 0. A timing animation always ends visible.
+ */
 export function Rise({ children, index = 0, style }: { children: ReactNode; index?: number; style?: StyleProp<ViewStyle> }) {
-  return <Animated.View entering={FadeInDown.delay(Math.min(index, 10) * 55).duration(460).easing(Easing.out(Easing.cubic))} style={style}>{children}</Animated.View>
+  const p = useSharedValue(0)
+  useEffect(() => { p.set(withDelay(Math.min(index, 10) * 55, withTiming(1, { duration: 460, easing: Easing.out(Easing.cubic) }))) }, [p, index])
+  const anim = useAnimatedStyle(() => ({ opacity: p.value, transform: [{ translateY: (1 - p.value) * 18 }] }))
+  return <Animated.View style={[style, anim]}>{children}</Animated.View>
 }
 
 /** "1,240", "#12", "86%", "4.5/5": the number counts up, the rest stays. */

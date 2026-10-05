@@ -2,7 +2,7 @@
   "expo": {
     "name": "Technova",
     "slug": "technova",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "technova",
@@ -32,7 +32,7 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ],
-      "versionCode": 1
+      "versionCode": 3
     },
     "web": {
       "output": "static",

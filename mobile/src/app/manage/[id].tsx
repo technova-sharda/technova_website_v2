@@ -55,7 +55,7 @@ function ClubEditor({ d, refreshing, onRefresh }: { d: ClubForManagement; refres
     else if (editing) updateMember.mutate({ id: editing.id, m: form }, done)
   }
   const changePhoto = async (m: ManagedMember) => {
-    const fd = await pickImageForm(true)
+    const fd = await pickImageForm(true).catch(e => { toast.error("Couldn't use that photo", e instanceof Error ? e.message : 'Try another image'); return null })
     if (fd) photo.mutate({ id: m.id, fd }, { onSuccess: () => toast.success('Photo updated'), onError: e => toast.error("Couldn't upload", e.message) })
   }
   // Technova's own team (Technova Executives) has no club lead; everyone is listed in one section
@@ -78,7 +78,7 @@ function ClubEditor({ d, refreshing, onRefresh }: { d: ClubForManagement; refres
           <T v="small">{d.members.length} members</T>
         </View>
         <Button size="sm" title="Logo" icon={{ ios: 'photo', android: 'image' }} loading={logo.isPending}
-          onPress={() => void pickImageForm(false).then(fd => fd && logo.mutate(fd, { onSuccess: () => toast.success('Logo updated'), onError: e => toast.error("Couldn't upload", e.message) }))} />
+          onPress={() => void pickImageForm(false).then(fd => fd && logo.mutate(fd, { onSuccess: () => toast.success('Logo updated'), onError: e => toast.error("Couldn't upload", e.message) })).catch(e => toast.error("Couldn't use that photo", e instanceof Error ? e.message : 'Try another image'))} />
       </View>
 
       <Section title="Details">
