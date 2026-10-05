@@ -13,4 +13,10 @@ export async function requireUser() {
     return session?.user?.id ? session : null
 }
 
+/** Signed-in user with one of the given roles (super_admin = admin panel, admin = scanner). */
+export async function requireRole(roles: string[]) {
+    const session = await requireUser()
+    return session && roles.includes((session.user as { role?: string }).role ?? "") ? session : null
+}
+
 export const siteUrl = () => (process.env.AUTH_URL || process.env.NEXTAUTH_URL || "https://technovashardauniversity.in").replace(/\/$/, "")

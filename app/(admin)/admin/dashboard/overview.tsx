@@ -5,18 +5,14 @@ import {
 } from "lucide-react"
 import { createAdminClient } from "@/lib/supabase/server"
 import { getAnalyticsDataset } from "@/lib/analytics/dataset"
-import { eventSummaries } from "@/lib/analytics/metrics"
-import { istDateKey } from "@/lib/dates/ist"
-import { eventPhase } from "@/lib/events/phase"
+import { computeOverview, type TodoKind } from "@/lib/admin/overview"
 import { EmptyState, Meter, PageHeader, Panel, PhaseBadge, StatCard, buttonCls, type Tone } from "@/components/admin/ui"
 
 
 const IST = "Asia/Kolkata"
-const DAY = 86_400_000
 const now = () => Date.now()
 const fmtDay = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { timeZone: IST, day: "numeric", month: "short" })
 const fmtWhen = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: IST, weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
-const pctChange = (a: number, b: number) => (b > 0 ? Math.round(((a - b) / b) * 100) : null)
 function greeting() {
     const h = Number(new Date().toLocaleString("en-IN", { timeZone: IST, hour: "numeric", hour12: false }))
     return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"
@@ -32,50 +28,23 @@ export async function Overview({ name }: { name: string | null }) {
         sb.from("events").select("reminder_sent_at").not("reminder_sent_at", "is", null).order("reminder_sent_at", { ascending: false }).limit(1).maybeSingle(),
     ])
     const t = now()
-    const withPhase = ds.events.map(e => ({ ...e, phase: eventPhase(e, t) }))
-    const summaries = new Map(eventSummaries(ds, ds.events).map(s => [s.id, s]))
-
-    // KPIs
-    const live = withPhase.filter(e => e.phase === "live")
-    const upcoming = withPhase.filter(e => e.phase === "upcoming").sort((a, b) => a.start_time.localeCompare(b.start_time))
-    const regsIn = (from: number, to: number) => ds.registrations.filter(r => { const x = new Date(r.created_at).getTime(); return x >= from && x < to }).length
-    const regs30 = regsIn(t - 30 * DAY, t), regsPrev30 = regsIn(t - 60 * DAY, t - 30 * DAY)
-    const recentEnded = withPhase.filter(e => e.phase === "ended" && new Date(e.end_time).getTime() > t - 120 * DAY).map(e => summaries.get(e.id)!).filter(Boolean)
-    const withAtt = recentEnded.filter(s => s.attendanceRecorded && s.registrations > 0)
-    const avgTurnout = withAtt.length ? Math.round(withAtt.reduce((a, s) => a + s.turnoutPct, 0) / withAtt.length) : null
-    // Rating: recent events, or all time when none of them collected ratings
-    const recentIds = new Set(recentEnded.map(s => s.id))
-    const recentRatings = ds.ratings.filter(r => recentIds.has(r.event_id))
-    const ratingPool = recentRatings.length ? recentRatings : ds.ratings
-    const avgRating = ratingPool.length ? (ratingPool.reduce((a, r) => a + r.rating, 0) / ratingPool.length).toFixed(1) : null
-    const ratingScope = recentRatings.length ? "last 4 months" : "all time"
-    const change = pctChange(regs30, regsPrev30)
-
-    // Registrations per day, last 14 days
-    const days = Array.from({ length: 14 }, (_, i) => istDateKey(new Date(t - (13 - i) * DAY)))
-    const perDay = new Map(days.map(d => [d, 0]))
-    for (const r of ds.registrations) { const k = istDateKey(r.created_at); if (perDay.has(k)) perDay.set(k, perDay.get(k)! + 1) }
+    const o = computeOverview(ds, t)
+    const { live, upcoming, regs30, change, avgTurnout, avgRating, ratingScope, summaries, nextUp, recent } = o
+    const ratingPool = { length: o.ratingCount }
+    const days = o.perDay.map(d => d.day)
+    const perDay = new Map(o.perDay.map(d => [d.day, d.count]))
     const maxDay = Math.max(1, ...perDay.values())
-    const total14 = [...perDay.values()].reduce((a, b) => a + b, 0)
-
-    // Needs attention
-    const todos: Todo[] = []
-    for (const e of withPhase.filter(e => e.phase === "ended" && new Date(e.end_time).getTime() > t - 90 * DAY).sort((a, b) => b.end_time.localeCompare(a.end_time))) {
-        const s = summaries.get(e.id)
-        if (!s || s.registrations === 0) continue
-        if (!s.attendanceRecorded) todos.push({ tone: "amber", icon: UserCheck, title: `Record attendance for ${e.title}`, detail: `${s.registrations} registered · ended ${fmtDay(e.end_time)}`, href: `/admin/events/${e.id}/attendance`, cta: "Attendance" })
-        else if (s.certificates === 0) todos.push({ tone: "violet", icon: Award, title: `Issue certificates for ${e.title}`, detail: `${s.attended} attended · none issued yet`, href: `/admin/events/${e.id}/certificates`, cta: "Certificates" })
-        else if (s.certificatesEmailed < s.certificates) todos.push({ tone: "violet", icon: Award, title: `Email certificates for ${e.title}`, detail: `${s.certificates - s.certificatesEmailed} of ${s.certificates} not emailed`, href: `/admin/events/${e.id}/certificates`, cta: "Certificates" })
-        if (s.attendanceRecorded && s.feedbackResponses === 0) todos.push({ tone: "sky", icon: MessageSquare, title: `Collect feedback for ${e.title}`, detail: `${s.attended} attended · no feedback yet`, href: `/admin/events/${e.id}`, cta: "Open event" })
+    const total14 = o.perDay.reduce((a, d) => a + d.count, 0)
+    const TODO_UI: Record<TodoKind, { tone: Tone; icon: typeof Calendar; href: (id: string) => string; cta: string }> = {
+        attendance: { tone: "amber", icon: UserCheck, href: id => `/admin/events/${id}/attendance`, cta: "Attendance" },
+        certificates: { tone: "violet", icon: Award, href: id => `/admin/events/${id}/certificates`, cta: "Certificates" },
+        "email-certificates": { tone: "violet", icon: Award, href: id => `/admin/events/${id}/certificates`, cta: "Certificates" },
+        feedback: { tone: "sky", icon: MessageSquare, href: id => `/admin/events/${id}`, cta: "Open event" },
+        "low-registrations": { tone: "rose", icon: Users, href: id => `/admin/events/${id}`, cta: "Open event" },
+        draft: { tone: "gray", icon: Calendar, href: id => `/admin/events/${id}/edit`, cta: "Edit" },
     }
-    for (const e of upcoming.filter(e => new Date(e.start_time).getTime() < t + 4 * DAY)) {
-        const s = summaries.get(e.id)
-        if (e.capacity && s && s.registrations / e.capacity < 0.3) todos.push({ tone: "rose", icon: Users, title: `Low registrations for ${e.title}`, detail: `${s.registrations} of ${e.capacity} seats · starts ${fmtWhen(e.start_time)}`, href: `/admin/events/${e.id}`, cta: "Open event" })
-    }
-    for (const e of withPhase.filter(e => e.phase === "draft")) todos.push({ tone: "gray", icon: Calendar, title: `${e.title} is still a draft`, detail: "Not visible to students", href: `/admin/events/${e.id}/edit`, cta: "Edit" })
+    const todos: Todo[] = o.todos.map(td => ({ ...TODO_UI[td.kind], href: TODO_UI[td.kind].href(td.eventId), title: td.title, detail: td.detail }))
 
-    const nextUp = [...live, ...upcoming].slice(0, 4)
-    const recent = withPhase.filter(e => e.phase === "ended").sort((a, b) => b.end_time.localeCompare(a.end_time)).slice(0, 5)
     const reminderAt = (lastReminder.data?.reminder_sent_at as string | null) ?? null
     const firstName = (name ?? "").split(" ")[0]
 
