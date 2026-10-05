@@ -61,6 +61,8 @@ The production database holds real student data (all B.Tech registrations, atten
 | Admin Roles | `/admin/roles`: make anyone Super Admin (full panel), Admin (scanner only) or Student; confirmation, no self-change, never zero super admins, change history. |
 | Activity Logs | `/admin/logs` (only the Tech Lead; change with `AUDIT_LOG_VIEWERS`): who changed what and when. Every successful database write and file upload made by a super admin (and any Club Management change) is recorded automatically by the server Supabase client (`lib/audit`), written after the response so pages don't slow down. Filter by person, type, action, date; search; grouped per click with the changed fields. Append-only table `admin_audit_log` (migration `20261005_admin_audit_log.sql`). Scanner check-ins and students' own actions aren't logged. |
 | Scanners and hackathon portal | QR check-in, gate / food / attendance scanners, hackathon team management and evaluation. |
+| Form builder | `/admin/forms/<id>/edit`: the form as a left-to-right flow (Start → sections → Submit). Drag question types or "Section" from the top bar onto the canvas, drag questions between sections, drag sections to reorder. Drag a section's exit knob onto where it continues, or a dropdown answer's knob onto the section people who pick it should go to; arrows are labelled and coloured per dropdown, hover highlights them, and a "Logic in plain words" list plus loop / unreachable-section warnings explain the flow. Saved in the same format the public form reads (`lib/forms/sections.ts`, unit-tested against it). Deleting a question that already has answers asks first. |
+| Event scanner | `/scan`: phone-first (camera viewfinder, progress bar, bottom tabs Scan / Checked in / Everyone, big buttons). A scan updates the list instantly and syncs in the background; the same QR read twice within 4s is ignored; vibration + sound feedback; Photo mode for phones whose live camera fails (remembered). Server: the scan and check-in APIs read in parallel and the attendee list pages past Supabase's 1,000-row limit. |
 
 ### AI features
 
@@ -72,6 +74,13 @@ All AI calls go to NVIDIA's hosted models (`NAPI_KEY`), currently **Nemotron 3 S
 - Super admins only, 40 questions/hour each. Warm-up runs when the page opens or the sidebar link is hovered.
 
 ---
+
+## Phone app
+
+`mobile/` is the native Android + iOS app (Expo / React Native). It uses the website's
+`/api/mobile/v1/*` endpoints and signs in through the website's Google login
+(`lib/mobile/session.ts`: the app gets its own database session, sent as a Bearer token,
+so `auth()` and every existing permission check work for it). See `mobile/README.md`.
 
 ## Architecture
 

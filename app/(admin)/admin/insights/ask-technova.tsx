@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { ArrowUp, ChevronDown, Database, Loader2, ShieldCheck, Sparkles } from "lucide-react"
 import type { InsightAnswer, InsightChart } from "@/lib/ai/insights"
+import { PageHeader } from "@/components/admin/ui"
 
 const PALETTE = ["#F5A623", "#6366F1", "#22C55E", "#EC4899", "#06B6D4", "#A855F7", "#F97316", "#84CC16"]
 const tooltipStyle = { background: "#0A0A0B", border: "1px solid #27272A", borderRadius: 12, color: "#FAFAF9", fontSize: 12 }
@@ -133,11 +134,10 @@ export function AskTechnova({ configured }: { configured: boolean }) {
     }
 
     return (
-        <div className="min-h-screen bg-black p-4 sm:p-6 md:p-8 flex flex-col">
+        <div className="flex min-h-[calc(100dvh-8rem)] flex-col">
             <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3"><Sparkles className="w-8 h-8 text-amber-400" /> Ask Technova</h1>
-                    <p className="text-gray-400 mt-1">Ask about events, registrations, turnout, feedback and clubs in plain English.</p>
+                    <PageHeader icon={Sparkles} title="Ask Technova" description="Ask about events, registrations, turnout, feedback and clubs in plain English." />
                     <p className="text-xs text-gray-500 mt-2 flex items-start gap-1.5">
                         <ShieldCheck className="w-3.5 h-3.5 mt-0.5 shrink-0 text-green-400" />
                         Read-only. The AI only sees anonymous totals (no names, emails or phone numbers) through fixed lookups, and every number in a chart comes from the database. Questions go to NVIDIA&apos;s API.

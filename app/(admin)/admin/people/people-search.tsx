@@ -5,6 +5,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { Award, Calendar, CheckCircle2, Loader2, Mail, Phone, Search, Trophy, UserRound, X } from "lucide-react"
 import { getPerson, searchPeople, type PersonDetail, type PersonSummary } from "@/lib/actions/people"
+import { PageHeader } from "@/components/admin/ui"
 
 const fmt = (d: string) => new Date(d).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })
 
@@ -127,12 +128,9 @@ export function PeopleSearch() {
     }
 
     return (
-        <div className="min-h-screen bg-black p-4 sm:p-6 md:p-8">
+        <div>
             <div className="max-w-5xl space-y-6">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3"><UserRound className="w-8 h-8 text-blue-400" /> People</h1>
-                    <p className="text-gray-400 mt-1">Look up any student: events registered and attended, certificates and XP.</p>
-                </div>
+                <PageHeader icon={UserRound} title="People" tone="blue" description="Look up any student: events registered and attended, certificates and XP." />
 
                 <div className="relative max-w-xl">
                     <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />

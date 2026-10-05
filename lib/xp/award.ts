@@ -270,10 +270,9 @@ export async function awardDailyXP(
     // 3. Format check-in date (IST calendar date; the server runs in UTC)
     const dateStr = istDateKey(checkinDate)
 
-    // 4. Check if already checked in today
-    const alreadyCheckedIn = await hasDailyCheckin(userId, eventId, checkinDate)
-    if (alreadyCheckedIn) {
-        const existingCheckins = await getUserDailyCheckinsForEvent(userId, eventId)
+    // 4. One read answers both "already checked in today?" and "how many days so far?"
+    const existingCheckins = await getUserDailyCheckinsForEvent(userId, eventId)
+    if (existingCheckins.some(c => c.date === dateStr)) {
         return {
             success: false,
             xpAwarded: 0,
@@ -286,8 +285,7 @@ export async function awardDailyXP(
         }
     }
 
-    // 5. Get existing check-ins to determine if this is the last day
-    const existingCheckins = await getUserDailyCheckinsForEvent(userId, eventId)
+    // 5. Existing check-ins decide if this is the last day
     const daysCheckedIn = existingCheckins.length
     const totalAwarded = existingCheckins.reduce((sum, c) => sum + c.xpAwarded, 0)
 

@@ -1,3 +1,4 @@
 import coreWebVitals from "eslint-config-next/core-web-vitals"
 
-export default coreWebVitals
+// mobile/ is the Expo app; it has its own lint setup (npx expo lint)
+export default [{ ignores: ["mobile/**"] }, ...coreWebVitals]

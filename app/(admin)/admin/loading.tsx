@@ -2,7 +2,7 @@ import { Skeleton, SkeletonStats, SkeletonTable } from '@/components/ui/skeleton
 
 export default function AdminLoading() {
     return (
-        <div className="min-h-screen bg-black p-6 md:p-8 space-y-8">
+        <div className="space-y-6">
             {/* Header Skeleton */}
             <div className="flex items-center justify-between">
                 <div className="space-y-2">

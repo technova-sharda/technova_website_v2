@@ -1,5 +1,5 @@
 import { cache } from "react"
-import NextAuth from "next-auth"
+import NextAuth, { type Session } from "next-auth"
 import { SupabaseAdapter } from "@auth/supabase-adapter"
 import { config } from "./config"
 
@@ -19,7 +19,20 @@ export const { handlers, signIn, signOut } = nextAuth
  * within one request the session is now read once and reused.
  * auth(handler) / auth(req, res) forms (the proxy) pass straight through.
  */
-const sessionForThisRequest = cache(() => nextAuth.auth())
+const sessionForThisRequest = cache(async () => {
+    // The phone app sends its database session as a Bearer token (lib/mobile/session.ts)
+    try {
+        const { headers } = await import("next/headers")
+        const header = (await headers()).get("authorization") ?? ""
+        if (header.toLowerCase().startsWith("bearer ")) {
+            const { sessionFromBearer } = await import("@/lib/mobile/session")
+            return (await sessionFromBearer(header.slice(7).trim())) as unknown as Session | null
+        }
+    } catch {
+        // no request headers here (build / scripts): fall through to cookies
+    }
+    return (await nextAuth.auth()) as Session | null
+})
 
 export const auth = ((...args: unknown[]) =>
     args.length === 0 ? sessionForThisRequest() : (nextAuth.auth as (...a: unknown[]) => unknown)(...args)

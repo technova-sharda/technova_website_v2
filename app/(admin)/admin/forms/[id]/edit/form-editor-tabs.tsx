@@ -3,27 +3,29 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { LayoutList, Settings } from "lucide-react"
-import { FormBuilderWrapper, RegistrationField } from "@/components/admin/form-builder"
+import type { RegistrationField } from "@/components/admin/form-builder"
+import { FormFlowBuilder } from "@/components/admin/form-flow-builder"
 import { FormSettings } from "@/components/admin/form-settings"
 
 interface FormEditorTabsProps {
     form: any
     initialFields: RegistrationField[]
     formId: string
+    answerCounts: Record<string, number>
 }
 
-export function FormEditorTabs({ form, initialFields, formId }: FormEditorTabsProps) {
+export function FormEditorTabs({ form, initialFields, formId, answerCounts }: FormEditorTabsProps) {
     const [activeTab, setActiveTab] = useState<"questions" | "settings">("questions")
 
     const tabs = [
-        { id: "questions" as const, label: "Questions", icon: LayoutList },
+        { id: "questions" as const, label: "Sections & questions", icon: LayoutList },
         { id: "settings" as const, label: "Settings", icon: Settings },
     ]
 
     return (
         <div>
             {/* Tab bar */}
-            <div className="flex gap-1 p-1 bg-[#141416] border border-[#27272a] rounded-xl mb-8">
+            <div className="flex gap-1 p-1 bg-[#141416] border border-[#27272a] rounded-xl mb-6 max-w-md">
                 {tabs.map((tab) => {
                     const Icon = tab.icon
                     const isActive = activeTab === tab.id
@@ -59,7 +61,7 @@ export function FormEditorTabs({ form, initialFields, formId }: FormEditorTabsPr
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <FormBuilderWrapper initialFields={initialFields} formId={formId} />
+                    <FormFlowBuilder initialFields={initialFields} formId={formId} answerCounts={answerCounts} />
                 </motion.div>
             )}
             {activeTab === "settings" && (

@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/server"
 import { AUDIT_TABLE, entityLabel } from "@/lib/audit/audit"
 import { canViewAuditLog } from "@/lib/audit/viewers"
+import { PageHeader } from "@/components/admin/ui"
 
 export const metadata: Metadata = { title: "Activity Logs" }
 
@@ -153,10 +154,7 @@ export default async function LogsPage({ searchParams }: { searchParams: Promise
 
     return (
         <div className="max-w-5xl mx-auto space-y-6">
-            <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3"><ScrollText className="w-7 h-7 text-amber-400" /> Activity Logs</h1>
-                <p className="text-gray-400 text-sm mt-1">Every change made in the admin panel by a super admin, and in Club Management by anyone. Only you can see this page.</p>
-            </div>
+            <PageHeader icon={ScrollText} title="Activity logs" description="Every change made in the admin panel by a super admin, and in Club Management by anyone. Only you can see this page." />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[["Changes today", today], ["Last 7 days", week], ["Last 30 days", recent.length], ["People active (30 days)", people.size]].map(([l, v]) => (
