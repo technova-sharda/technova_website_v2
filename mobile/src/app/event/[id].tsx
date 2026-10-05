@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Share, StyleSheet, View } from 'react-native'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as WebBrowser from 'expo-web-browser'
-import Animated, { Extrapolation, interpolate, SlideInDown, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { C, F, R } from '@/constants/theme'
 import { ApiError } from '@/lib/api'
@@ -33,6 +33,10 @@ export default function EventScreen() {
       { scale: y.value < 0 ? 1 + -y.value / BANNER : 1 },
     ],
   }))
+  // Register bar slides up once; a spring on a shared value always finishes on screen
+  const bar = useSharedValue(0)
+  useEffect(() => { bar.set(withDelay(250, withSpring(1, { damping: 18 }))) }, [bar])
+  const barStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - bar.value) * 140 }] }))
   const headerStyle = useAnimatedStyle(() => ({ opacity: interpolate(y.value, [BANNER - 140, BANNER - 70], [0, 1], Extrapolation.CLAMP) }))
 
   if (q.isLoading) return <View style={{ flex: 1, backgroundColor: C.bg, padding: 16, paddingTop: insets.top + 60 }}><Loading rows={4} /></View>
@@ -122,7 +126,7 @@ export default function EventScreen() {
       </Animated.View>
 
       {!registered && open && (
-        <Animated.View entering={SlideInDown.delay(250).springify().damping(18)} style={{ position: 'absolute', left: 12, right: 12, bottom: insets.bottom + 10, padding: 12, borderRadius: R.xl, backgroundColor: '#1A1A1D', borderWidth: 1, borderColor: C.borderStrong, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 12 }}>
+        <Animated.View style={[barStyle, { position: 'absolute', left: 12, right: 12, bottom: insets.bottom + 10, padding: 12, borderRadius: R.xl, backgroundColor: '#1A1A1D', borderWidth: 1, borderColor: C.borderStrong, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 12 }]}>
           <View style={{ flex: 1, paddingLeft: 4 }}>
             <T style={{ fontFamily: F.display, fontSize: 18 }}>{e.price > 0 ? `₹${e.price}` : 'Free'}</T>
             <T v="small">{e.capacity ? `${Math.max(0, e.capacity - e.registered)} seats left` : 'Open registration'}</T>

@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { KeyboardAvoidingView, Platform, View } from 'react-native'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import * as ImagePicker from 'expo-image-picker'
 import { Image } from 'expo-image'
 import { C, R } from '@/constants/theme'
 import { adminApi, useAdminEvent, useClubOptions } from '@/lib/admin'
 import { useToast } from '@/components/toast'
 import { DateTimeField, Toggle, toIstInput } from '@/components/admin/inputs'
+import { pickImage } from '@/components/admin/pick-image'
 import { Box, Button, ErrorState, Field, Loading, Screen, Section, Select, T } from '@/components/ui'
 
 type Ev = Record<string, any>
@@ -75,10 +75,10 @@ function EventForm({ event }: { event?: Ev }) {
   if (event?.status && !statusOptions.some(o => o.value === event.status)) statusOptions.push({ value: event.status, label: event.status })
 
   const pickBanner = async () => {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85, allowsEditing: true, aspect: [16, 9] })
-    if (r.canceled || !r.assets[0]) return
-    const a = r.assets[0]
-    setBanner({ uri: a.uri, name: a.fileName ?? `banner-${Date.now()}.jpg`, type: a.mimeType ?? 'image/jpeg' })
+    try {
+      const img = await pickImage({ aspect: [16, 9], maxWidth: 1920 })
+      if (img) setBanner(img)
+    } catch (e) { toast.error("Couldn't use that photo", e instanceof Error ? e.message : 'Try another image') }
   }
 
   const save = async () => {
