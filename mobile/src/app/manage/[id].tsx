@@ -9,7 +9,7 @@ import { Avatar, Badge, Box, Button, Empty, ErrorState, Field, Group, Icon, Load
 
 type MemberForm = { name: string; role: string; email: string; phone: string; linkedin_id: string }
 const blank: MemberForm = { name: '', role: 'Core Team', email: '', phone: '', linkedin_id: '' }
-const isLeadRole = (r: string) => /^(club\s+)?lead(\s*\(.*\))?$/i.test(r.trim()) // same rule as the website
+const isLeadRole = (r: string) => /^(club\s+)?(lead|organi[sz]er)(\s*\(.*\))?$/i.test(r.trim()) // same rule as the website
 
 export default function ManageClub() {
   const { id } = useLocalSearchParams<{ id: string }>()

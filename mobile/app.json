@@ -2,7 +2,7 @@
   "expo": {
     "name": "Technova",
     "slug": "technova",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "technova",
@@ -32,7 +32,7 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ],
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "output": "static",
@@ -40,7 +40,20 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Technova uses your photos so you can set club logos, member photos and event banners.",
+          "cameraPermission": "Technova uses the camera to scan event tickets at check-in.",
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-camera",
         {

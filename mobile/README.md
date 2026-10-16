@@ -38,6 +38,22 @@ npx eas-cli@latest build --profile production --platform all     # Play Store / 
 Play Store needs a Google Play developer account (one-time $25). App Store and
 TestFlight need an Apple Developer account ($99/year).
 
+### iPhone
+
+The same code is the iOS app; only the build differs. EAS builds it in the cloud,
+so no Mac or Xcode is needed, but it needs the Apple Developer account above
+(EAS asks for the Apple ID on the first build and makes the certificates):
+
+```bash
+npx eas-cli@latest build --profile production --platform ios   # .ipa
+npx eas-cli@latest submit --platform ios                        # to TestFlight, then App Store
+```
+
+Team members install it from TestFlight. Without the paid account, a Mac with Xcode
+can still put a Release build on your own iPhone over the cable
+(`npx expo run:ios --device --configuration Release`), but Apple makes it stop
+opening after 7 days.
+
 ## Checks
 
 ```bash

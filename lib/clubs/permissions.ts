@@ -3,7 +3,8 @@
  * no extra table is needed:
  * - Technova President, Vice President and Tech Lead (club "Technova Executives")
  *   can manage every club.
- * - A club's Lead ("Club Lead", "Lead", "Club Lead (Organizer)") can manage that
+ * - A club's Lead ("Club Lead", "Lead", "Club Lead (Organizer)", or "Organizer" /
+ *   "Organiser", what GDG on Campus calls its lead) can manage that
  *   club only. Co-Leads, domain heads ("Technical Head", "Editorial Lead") and
  *   coordinators can't (decided 4 Oct 2026).
  * Matching is by the email on the member row = the Google login email.
@@ -16,10 +17,11 @@ const GLOBAL_ROLES = /^(president|vice president|tech lead)$/i
 
 /**
  * True for a club's main lead role, which grants Club Management access.
- * Not Co-Leads, and not domain leads like "Editorial Lead" or "AIML & Robotics Lead".
+ * Not Co-Leads, and not domain leads like "Editorial Lead" or "AIML & Robotics Lead"
+ * (nor "Co-Organizer" or "Event Organizer").
  */
 export function isClubLeadRole(role: string | null | undefined) {
-    return /^(club\s+)?lead(\s*\(.*\))?$/i.test(String(role ?? "").trim())
+    return /^(club\s+)?(lead|organi[sz]er)(\s*\(.*\))?$/i.test(String(role ?? "").trim())
 }
 
 export type ClubAccess = { global: boolean; clubIds: string[] }

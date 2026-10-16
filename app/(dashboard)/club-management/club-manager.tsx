@@ -14,7 +14,7 @@ import {
 
 const ROLE_SUGGESTIONS = ["Club Lead", "Club Co-Lead", "Technical Head", "Projects & Operations Lead", "Editorial Head", "PR Head", "Design Lead", "Content Lead", "Coordinator", "Core Team"]
 const input = "w-full h-10 rounded-lg bg-zinc-950 border border-white/10 px-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-amber-500/50"
-const isLead = (role: string) => /^(club\s+)?lead(\s*\(.*\))?$/i.test(role.trim())
+const isLead = (role: string) => /^(club\s+)?(lead|organi[sz]er)(\s*\(.*\))?$/i.test(role.trim())
 
 function Avatar({ src, name, size = 56 }: { src: string | null; name: string; size?: number }) {
     const initials = name.split(/\s+/).map(p => p[0]).join("").slice(0, 2).toUpperCase()
