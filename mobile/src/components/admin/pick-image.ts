@@ -1,7 +1,14 @@
 import * as ImagePicker from 'expo-image-picker'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
+import { File } from 'expo-file-system'
 
-export type PickedImage = { uri: string; name: string; type: string }
+/**
+ * A picked photo, ready to append to FormData. The app's fetch (expo/fetch) can't send
+ * React Native's `{ uri, name, type }` file parts ("Unsupported FormDataPart implementation");
+ * it reads the bytes from an expo-file-system File, whose name and type (image/jpeg) come
+ * from its .jpg path.
+ */
+export type PickedImage = File
 
 /**
  * Opens the photo library and returns the chosen photo as a JPEG no wider than `maxWidth`.
@@ -20,8 +27,7 @@ export async function pickImage({ square = false, aspect, maxWidth = 1600 }: { s
   if (a.width > maxWidth) ctx.resize({ width: maxWidth })
   const image = await ctx.renderAsync()
   const out = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.85 })
-  const base = (a.fileName ?? `photo-${Date.now()}`).replace(/\.[^.]*$/, '').replace(/[^\w-]+/g, '_') || 'photo'
-  return { uri: out.uri, name: `${base}.jpg`, type: 'image/jpeg' }
+  return new File(out.uri)
 }
 
 /** Same as pickImage, wrapped as FormData with the file under "file" (club logo, member photo). */
@@ -29,6 +35,6 @@ export async function pickImageForm(square: boolean) {
   const img = await pickImage({ square, maxWidth: square ? 800 : 1024 })
   if (!img) return null
   const fd = new FormData()
-  fd.append('file', img as unknown as Blob)
+  fd.append('file', img)
   return fd
 }

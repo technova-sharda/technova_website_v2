@@ -7,7 +7,7 @@ import { C, R } from '@/constants/theme'
 import { adminApi, useAdminEvent, useClubOptions } from '@/lib/admin'
 import { useToast } from '@/components/toast'
 import { DateTimeField, Toggle, toIstInput } from '@/components/admin/inputs'
-import { pickImage } from '@/components/admin/pick-image'
+import { pickImage, type PickedImage } from '@/components/admin/pick-image'
 import { Box, Button, ErrorState, Field, Loading, Screen, Section, Select, T } from '@/components/ui'
 
 type Ev = Record<string, any>
@@ -63,7 +63,7 @@ function EventForm({ event }: { event?: Ev }) {
   const qc = useQueryClient()
   const clubs = useClubOptions()
   const [f, setF] = useState(() => initial(event))
-  const [banner, setBanner] = useState<{ uri: string; name: string; type: string } | null>(null)
+  const [banner, setBanner] = useState<PickedImage | null>(null)
   const [tried, setTried] = useState(false)
   const [saving, setSaving] = useState(false)
   const set = <K extends keyof Form>(k: K) => (v: Form[K]) => setF(s => ({ ...s, [k]: v }))
@@ -98,7 +98,7 @@ function EventForm({ event }: { event?: Ev }) {
     put('registration_fields', JSON.stringify(questions))
     put('banner_position', event?.banner_position || 'center')
     if (event?.banner) put('banner', event.banner)
-    if (banner) fd.append('banner_file', banner as unknown as Blob)
+    if (banner) fd.append('banner_file', banner)
     setSaving(true)
     try {
       const r = await adminApi<{ eventId?: string; message?: string }>(event ? `/events/${event.id}` : '/events', { method: event ? 'PUT' : 'POST', body: fd })
